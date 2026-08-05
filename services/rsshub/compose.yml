@@ -1,0 +1,47 @@
+networks:
+  proxy-net:
+    driver: bridge
+  internal-net:
+    driver: bridge
+    internal: true
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  rsshub:
+    image: diygod/rsshub:chromium-bundled
+    container_name: rsshub
+    restart: unless-stopped
+    depends_on:
+      - rsshub-redis
+    environment:
+      - NODE_ENV=production
+      - CACHE_TYPE=redis
+      - REDIS_URL=redis://rsshub-redis:6379
+      - TWITTER_AUTH_TOKEN=${RSS_TWITTER_AUTH_TOKEN}
+    deploy:
+      resources:
+        limits:
+          cpus: '1.00'
+          memory: 1024M
+    logging: *default-logging
+    networks:
+      - proxy-net
+      - internal-net
+
+  rsshub-redis:
+    image: redis:alpine
+    container_name: rsshub_redis
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
+    logging: *default-logging
+    networks:
+      - internal-net

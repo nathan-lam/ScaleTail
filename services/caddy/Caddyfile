@@ -1,5 +1,153 @@
-# ${SERVICE}.magicDNSname.ts.net
-http://caddy.MagicDNSname.ts.net {
-	# respond "Hello, world!"
-	reverse_proxy http://whoami
+# # ${SERVICE}.magicDNSname.ts.net
+# http://caddy.MagicDNSname.ts.net {
+# 	# respond "Hello, world!"
+# 	reverse_proxy http://whoami
+# }
+
+(porkbun_tls) {
+    tls {
+        issuer acme {
+            dns porkbun {
+                api_key {env.PORKBUN_API_KEY}
+                api_secret_key {env.PORKBUN_SECRET_KEY}
+            }
+        }
+    }
 }
+
+calagopus.69483840.xyz {
+    import porkbun_tls
+
+    reverse_proxy 172.17.0.1:8000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        
+        # Support WebSockets for real-time panel stats and terminal streams
+        header_up Upgrade {http.request.header.Upgrade}
+        header_up Connection {http.request.header.Connection}
+    }
+
+    request_body {
+        max_size 100MB
+    }
+}
+
+copyparty.69483840.xyz {
+    import porkbun_tls
+    reverse_proxy copyparty:3923 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}
+
+crafty.69483840.xyz {
+    import porkbun_tls
+
+    reverse_proxy https://crafty:8443 {
+        transport http {
+            tls_insecure_skip_verify
+        }
+ 
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto https
+        header_up Upgrade {http.request.header.Upgrade}
+        header_up Connection {http.request.header.Connection}
+    }
+}
+
+immich.69483840.xyz {
+    reverse_proxy immich-server:2283
+}
+ 
+invidious.69483840.xyz {
+    reverse_proxy invidious:3000
+}
+ 
+ 
+jellyfin.69483840.xyz {
+    reverse_proxy jellyfin:8096
+}
+ 
+karakeep.69483840.xyz {
+    reverse_proxy karakeep:3000
+}
+ 
+ 
+metube.69483840.xyz {
+    reverse_proxy metube:8081
+}
+ 
+navidrome.69483840.xyz {
+    import porkbun_tls
+    reverse_proxy navidrome:4533
+}
+
+netdata.69483840.xyz {
+    import porkbun_tls
+    reverse_proxy netdata:19999 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+    }
+}
+
+nextcloud.69483840.xyz {
+    import porkbun_tls
+    
+    # If Caddy is in Docker and Nextcloud-aio-apache is on the host or shared network:
+    reverse_proxy 172.17.0.1:11000
+    # OR if using a container name:
+    # reverse_proxy nextcloud-aio-apache:11000
+
+    header Strict-Transport-Security "max-age=31536000;"
+}
+ 
+portainer.69483840.xyz {
+    reverse_proxy portainer:9000
+}
+
+pterodactyl-panel.69483840.xyz {
+    import porkbun_tls
+    reverse_proxy 172.17.0.1:8080 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    request_body {
+        max_size 100MB
+    }
+}
+
+rsshub.69483840.xyz {
+    import porkbun_tls
+    reverse_proxy rsshub:1200 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}
+ 
+sparkyfitness.69483840.xyz {
+    reverse_proxy sparkyfitness-frontend:80
+}
+ 
+stash.69483840.xyz {
+    reverse_proxy stash:9999
+}
+
+wings.69483840.xyz {
+    import porkbun_tls
+
+    reverse_proxy http://172.17.0.1:20443 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}
+

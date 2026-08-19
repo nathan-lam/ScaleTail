@@ -42,6 +42,6 @@ Temporary Items
 _secrets/*
 
 # Misc
-.code-workspace
+*.code-workspace
 
 # End of https://www.toptal.com/developers/gitignore/api/macos

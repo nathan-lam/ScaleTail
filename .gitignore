@@ -38,7 +38,7 @@ Temporary Items
 **/.rumdl_cache/
 
 # Secrets
-*/.env
+**/.env
 _secrets/*
 
 # Misc

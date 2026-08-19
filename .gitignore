@@ -37,8 +37,11 @@ Temporary Items
 .rumdl_cache/
 **/.rumdl_cache/
 
-# secrets
+# Secrets
 .env
 _secrets/*
+
+# Misc
+.code-workspace
 
 # End of https://www.toptal.com/developers/gitignore/api/macos

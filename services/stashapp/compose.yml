@@ -13,9 +13,9 @@ x-logging: &default-logging
 
 services:
 
-  stash:
-    image: stashapp/stash:latest
-    container_name: stash
+  application:
+    image: ${IMAGE_URL}
+    container_name: app-${SERVICE}
     restart: unless-stopped
     dns:
       - 1.1.1.1
@@ -33,11 +33,11 @@ services:
       - STASH_CONFIG_FILE=/config/config.yml
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ./config/stash:/config
-      - ./config/stash/metadata:/metadata
-      - ./config/stash/cache:/cache
-      - ./config/stash/blobs:/blobs
-      - ./config/stash/generated:/generated
+      - ./${SERVICE}-data/config:/config
+      - ./${SERVICE}-data/metadata:/metadata
+      - ./${SERVICE}-data/cache:/cache
+      - ./${SERVICE}-data/blobs:/blobs
+      - ./${SERVICE}-data/generated:/generated
       - ${STASH_MEDIA_PATH}:/data
     logging: *default-logging
     networks:

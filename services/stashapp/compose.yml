@@ -1,0 +1,44 @@
+networks:
+  proxy-net:
+    driver: bridge
+  internal-net:
+    driver: bridge
+    internal: true
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+
+  stash:
+    image: stashapp/stash:latest
+    container_name: stash
+    restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    deploy:
+      resources:
+        limits:
+          cpus: '1.50'
+          memory: 2048M
+    environment:
+      - STASH_STASH=/data
+      - STASH_GENERATED=/generated/
+      - STASH_METADATA=/metadata/
+      - STASH_CACHE=/cache/
+      - STASH_CONFIG_FILE=/config/config.yml
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./config/stash:/config
+      - ./config/stash/metadata:/metadata
+      - ./config/stash/cache:/cache
+      - ./config/stash/blobs:/blobs
+      - ./config/stash/generated:/generated
+      - ${STASH_MEDIA_PATH}:/data
+    logging: *default-logging
+    networks:
+      - proxy-net

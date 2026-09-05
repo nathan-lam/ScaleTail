@@ -44,5 +44,6 @@ _secrets/*
 # Misc
 *.code-workspace
 **/ollama-data/models/*
+**/blobs/*
 
 # End of https://www.toptal.com/developers/gitignore/api/macos

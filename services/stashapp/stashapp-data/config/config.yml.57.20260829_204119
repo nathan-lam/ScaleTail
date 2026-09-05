@@ -1,0 +1,50 @@
+blobs_storage: DATABASE
+calculate_md5: false
+create_image_clip_from_videos: false
+dangerous_allow_public_without_auth: "false"
+database: /config/stash-go.sqlite
+gallery_cover_regex: (poster|cover|folder|board)\.[^\.]+$
+generated: ""
+host: 0.0.0.0
+jwt_secret_key: ae32ed2b8a8a1699fd4269ab977708733bdac6194a5ae60c58f70617cbc659e2
+maximum_sprites: 500
+minimum_sprites: 10
+no_proxy: localhost,127.0.0.1,192.168.0.0/16,10.0.0.0/8,172.16.0.0/12
+nobrowser: false
+notifications_enabled: true
+parallel_tasks: 1
+plugins:
+    package_sources:
+        - localpath: community
+          name: Community (stable)
+          url: https://stashapp.github.io/CommunityScripts/stable/index.yml
+plugins_path: /config/plugins
+port: 9999
+preview_audio: true
+preview_exclude_end: "0"
+preview_exclude_start: "0"
+preview_segment_duration: 0.75
+preview_segments: 12
+scrapers:
+    package_sources:
+        - localpath: community
+          name: Community (stable)
+          url: https://stashapp.github.io/CommunityScrapers/stable/index.yml
+scrapers_path: /config/scrapers
+security_tripwire_accessed_from_public_internet: ""
+sequential_scanning: false
+session_store_key: 4288628b9d1db2cf103f762364e1aa0e9a24b386930399cbf44745fbe2683d50
+show_one_time_moved_notification: false
+sound_on_preview: false
+sprite_interval: 30
+sprite_screenshot_width: 160
+stash:
+    - excludeimage: false
+      excludevideo: false
+      path: /data
+theme_color: '#202b33'
+ui:
+    lastNoteSeen: 20251026
+use_custom_sprite_interval: false
+video_file_naming_algorithm: OSHASH
+write_image_thumbnails: true

@@ -8,13 +8,19 @@ configs:
       "AllowFunnel":{"$${TS_CERT_DOMAIN}:443":false}}
 
 services:
-# Make sure you have updated/checked the .env file with the correct variables.
+# Make sure you have updated/checked the .env file with the correct variables. 
 # All the ${ xx } need to be defined there.
   # Tailscale Sidecar Configuration
   tailscale:
     image: tailscale/tailscale:latest # Image to be used
     container_name: tailscale-${SERVICE} # Name for local container management
     hostname: ${SERVICE} # Name used within your Tailscale environment
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
     environment:
       - TS_AUTHKEY=${TS_AUTHKEY}
       - TS_STATE_DIR=/var/lib/tailscale
@@ -22,7 +28,7 @@ services:
       - TS_USERSPACE=false
       - TS_ENABLE_HEALTH_CHECK=true              # Enable healthcheck endpoint: "/healthz"
       - TS_LOCAL_ADDR_PORT=127.0.0.1:41234       # The <addr>:<port> for the healthz endpoint
-      #- TS_ACCEPT_DNS=true # Uncomment when using MagicDNS
+      - TS_ACCEPT_DNS=true # Uncomment when using MagicDNS
       - TS_AUTH_ONCE=true
     configs:
       - source: ts-serve
@@ -37,7 +43,7 @@ services:
     #ports:
     #  - 0.0.0.0:${SERVICEPORT}:${SERVICEPORT} # Binding port ${SERVICE}PORT to the local network - may be removed if only exposure to your Tailnet is required
     # If any DNS issues arise, use your preferred DNS provider by uncommenting the config below
-    #dns:
+    #dns: 
     #  - ${DNS_SERVER}
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:41234/healthz"] # Check Tailscale has a Tailnet IP and is operational
@@ -52,16 +58,19 @@ services:
     image: ${IMAGE_URL} # Image to be used
     network_mode: service:tailscale # Sidecar configuration to route ${SERVICE} through Tailscale
     container_name: app-${SERVICE} # Name for local container management
-    environment: # Variables are declared in the .env file.
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    environment:
+      - PUID=1000
+      - PGID=1000
       - TZ=${TZ}
-      - CRON_MIN=${CRON_MIN} # Crontab minute field for the built-in feed refresh; leave empty in .env to disable
-      - TRUSTED_PROXY=127.0.0.1 # Tailscale Serve reaches FreshRSS over the shared loopback, so trust it for X-Forwarded-For
-      # The two variables below are only read on the very first start (empty data volume).
-      - FRESHRSS_INSTALL=--api-enabled --base-url https://${SERVICE}.${TAILNET_NAME} --db-type sqlite --default-user ${ADMIN_USERNAME} --language en
-      - FRESHRSS_USER=--api-password ${ADMIN_API_PASSWORD} --email ${ADMIN_EMAIL} --language en --password ${ADMIN_PASSWORD} --user ${ADMIN_USERNAME}
+      - CRON_MIN=1,31 # Updates feeds every 30 mins
     volumes:
-      - ./${SERVICE}-data/app/data:/var/www/FreshRSS/data # Configuration, SQLite database, feeds and articles
-      - ./${SERVICE}-data/app/extensions:/var/www/FreshRSS/extensions # Optional third-party extensions
+      - ./${SERVICE}-data/app/config:/config
+      - ./data:/var/www/FreshRSS/data
+      - ./extensions:/var/www/FreshRSS/extensions
     depends_on:
       tailscale:
         condition: service_healthy

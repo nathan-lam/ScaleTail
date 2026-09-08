@@ -1,0 +1,34 @@
+{
+  "name": "youlag",
+  "version": "1.0.0",
+  "description": "Youlag Theme for FreshRSS",
+  "main": "events.js",
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "chokidar": "^5.0.0",
+    "dotenv": "^17.2.3"
+  },
+  "devDependencies": {
+    "chokidar-cli": "^3.0.0",
+    "sass": "^1.97.2",
+    "terser": "^5.44.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build-css": "sass src/theme.scss static/theme.min.css --no-source-map --style=compressed",
+    "build-js": "node scripts/build.js",
+    "watch": "node scripts/watch.js & sass --watch src/theme.scss static/theme.min.css --no-source-map --style=compressed",
+    "build": "npm run build-js && npm run build-css"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/civilblur/youlag.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/civilblur/youlag/issues"
+  },
+  "homepage": "https://github.com/civilblur/youlag#readme"
+}

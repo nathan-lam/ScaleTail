@@ -1,0 +1,101 @@
+// Package Youlag for distribution. Outputs files in the `dist` folder.
+// `npm run build`
+
+const fs = require('fs');
+const path = require('path');
+const archiver = require('archiver');
+
+const metadata = require('../metadata.json');
+const version = metadata.version;
+const distDir = path.resolve(__dirname, '../dist');
+const tempDir = path.resolve(__dirname, '../.tmp');
+fs.mkdirSync(tempDir, { recursive: true });
+
+
+const srcFiles = [
+  '../src/db.js',
+  '../src/global.js',
+  '../src/utilities.js',
+  '../src/helpers.js',
+  '../src/ui.js',
+  '../src/ui-modals.js',
+  '../src/ui-video-control.js',
+  '../src/ui-modes.js',
+  '../src/forms.js',
+  '../src/events.js',
+  '../src/debug.js',
+];
+const scriptTempDest = path.join(tempDir, 'script.min.js');
+
+const minifyAndInjectVersion = async () => {
+  const terser = require('terser');
+  let srcContent = srcFiles.map(f => fs.readFileSync(path.resolve(__dirname, f), 'utf8')).join('\n');
+  srcContent = srcContent.replace(/(app\.metadata\s*=\s*\{[^}]*version:\s*)['\"][^'\"]*['\"]/, `$1'${version}'`);
+  fs.mkdirSync(tempDir, { recursive: true });
+  try {
+    const { code, error } = await terser.minify(srcContent, {
+      compress: true
+    });
+    if (error || !code) throw error || new Error('No code output');
+    fs.writeFileSync(scriptTempDest, code);
+    return true;
+  } catch (err) {
+    console.error('Terser error:', err);
+    return false;
+  }
+};
+
+const preprocessScss = async () => {
+  const { execSync } = require('child_process');
+  try {
+    execSync('npx sass src/theme.scss static/theme.min.css --no-source-map --style=compressed', { stdio: 'inherit', cwd: path.resolve(__dirname, '..') });
+    return true;
+  } catch (err) {
+    console.error('SCSS preprocessing error:', err);
+    return false;
+  }
+};
+
+
+(async () => {
+  const scssOk = await preprocessScss();
+  if (!scssOk) {
+    process.exit(1);
+  }
+
+  await minifyAndInjectVersion();
+
+  const extensionFiles = [
+    { src: path.relative(__dirname, scriptTempDest), dest: 'static/script.min.js' },
+    { src: '../static/theme.min.css', dest: 'static/theme.min.css' },
+    { src: '../extension.php', dest: 'extension.php' },
+    { src: '../configure.phtml', dest: 'configure.phtml' },
+    { src: '../metadata.json', dest: 'metadata.json' }
+  ];
+
+  extensionFiles.forEach(({ src, dest }) => {
+    const srcPath = path.resolve(__dirname, src);
+    const destPath = path.join(distDir, dest);
+    fs.mkdirSync(path.dirname(destPath), { recursive: true });
+    fs.copyFileSync(srcPath, destPath);
+  });
+
+  const zipName = `youlag-${version}.zip`;
+  const zipPath = path.join(distDir, zipName);
+  const output = fs.createWriteStream(zipPath);
+  const archive = archiver('zip', { zlib: { level: 9 } });
+
+  output.on('close', () => {
+    const sizeMB = (archive.pointer() / (1024 * 1024)).toFixed(2);
+    console.log('\x1b[32m%s\x1b[0m', `v${version} build ready at: ${zipPath} (${sizeMB} MB)`);
+  });
+
+  archive.on('error', err => { throw err; });
+  archive.pipe(output);
+
+  extensionFiles.forEach(({ dest }) => {
+    archive.file(path.join(distDir, dest), { name: path.join('xExtension-Youlag', dest) });
+  });
+
+  archive.finalize();
+})();

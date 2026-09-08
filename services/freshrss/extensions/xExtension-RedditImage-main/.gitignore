@@ -1,0 +1,8 @@
+.idea
+static/*
+!.gitkeep
+vendor/
+var/
+.phpunit.cache/
+phpunit.xml
+.php-cs-fixer.cache

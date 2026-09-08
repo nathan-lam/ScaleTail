@@ -1,0 +1,29 @@
+# Node modules
+node_modules/
+
+# Logs
+npm-debug.log*
+
+# Build output
+/dist
+/build
+.youlag
+
+# .env files
+.env
+.env.*
+!.env.example
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore zip files in dist
+/dist/*.zip
+
+# Temp build folder
+.tmp/
+
+# IDE specific files
+.vscode/
+.idea/

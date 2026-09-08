@@ -1,0 +1,112 @@
+<form action="<?= _url('extension', 'configure', 'e', urlencode($this->getName())); ?>" method="post">
+	<input type="hidden" name="_csrf" value="<?= FreshRSS_Auth::csrfToken(); ?>" />
+	<legend><?= _t('ext.reddit_image.section.display_options') ?></legend>
+	<div class="form-group">
+		<label class="group-name" for="image-height"><?= _t('ext.reddit_image.image_height'); ?></label>
+		<div class="group-controls">
+            <input type="number" name="image-height" id="image-height" value="<?= $this->settings->getImageHeight(); ?>" min="1" max="1000"/>
+            <?= _t('ext.reddit_image.image_height_unit'); ?>
+		</div>
+	</div>
+
+	<div class="form-group">
+		<div class="group-controls">
+			<label class="checkbox" for="muted-video">
+				<input type="checkbox" name="muted-video" id="muted-video" value="1" <?= $this->settings->getMutedVideo() ? 'checked=true' : '' ?>/>
+				<?= _t('ext.reddit_image.muted_video'); ?>
+			</label>
+		</div>
+	</div>
+
+	<div class="form-group">
+		<div class="group-controls">
+			<label class="checkbox" for="display-image">
+				<input type="checkbox" name="display-image" id="display-image" value="1" <?= $this->settings->getDisplayImage() ? 'checked=true' : '' ?>/>
+				<?= _t('ext.reddit_image.display_image'); ?>
+			</label>
+		</div>
+	</div>
+
+	<div class="form-group">
+		<div class="group-controls">
+			<label class="checkbox" for="display-video">
+				<input type="checkbox" name="display-video" id="display-video" value="1" <?= $this->settings->getDisplayVideo() ? 'checked=true' : '' ?>/>
+				<?= _t('ext.reddit_image.display_video'); ?>
+			</label>
+		</div>
+	</div>
+
+	<div class="form-group">
+		<div class="group-controls">
+			<label class="checkbox" for="display-original">
+				<input type="checkbox" name="display-original" id="display-original" value="1" <?= $this->settings->getDisplayOriginal() ? 'checked=true' : '' ?>/>
+				<?= _t('ext.reddit_image.display_original'); ?>
+			</label>
+		</div>
+	</div>
+
+	<div class="form-group">
+		<div class="group-controls">
+			<label class="checkbox" for="display-metadata">
+				<input type="checkbox" name="display-metadata" id="display-metadata" value="1" <?= $this->settings->getDisplayMetadata() ? 'checked=true' : '' ?>/>
+				<?= _t('ext.reddit_image.display_metadata'); ?>
+			</label>
+		</div>
+	</div>
+
+	<div class="form-group">
+		<div class="group-controls">
+			<label class="checkbox" for="display-thumbnails">
+				<input type="checkbox" name="display-thumbnails" id="display-thumbnails" value="1" <?= $this->settings->getDisplayThumbnails() ? 'checked=true' : '' ?>/>
+				<?= _t('ext.reddit_image.display_thumbnails'); ?>
+			</label>
+		</div>
+	</div>
+
+	<div class="form-group form-actions">
+		<div class="group-controls">
+			<button type="submit" class="btn btn-important"><?= _t('gen.action.submit'); ?></button>
+			<button type="reset" class="btn"><?= _t('gen.action.cancel'); ?></button>
+		</div>
+	</div>
+
+	<legend><?= _t('ext.reddit_image.section.authorizations') ?></legend>
+	<div class="form-group">
+		<label class="group-name" for="flickr-api-key"><?= _t('ext.reddit_image.flickr_api_key'); ?></label>
+		<div class="group-controls">
+			<input type="text" name="flickr-api-key" id="flickr-api-key" value="<?= $this->settings->getFlickrApiKey() ?>"/>
+			<p class="help"><?= _i('help') ?> <?= _t('ext.reddit_image.help.flickr_api_key') ?></p>
+		</div>
+	</div>
+	<div class="form-group">
+		<label class="group-name" for="imgur-client-id"><?= _t('ext.reddit_image.imgur_client_id'); ?></label>
+		<div class="group-controls">
+			<input type="text" name="imgur-client-id" id="imgur-client-id" value="<?= $this->settings->getImgurClientId() ?>"/>
+			<p class="help"><?= _i('help') ?> <?= _t('ext.reddit_image.help.imgur_client_id') ?></p>
+		</div>
+	</div>
+
+	<div class="form-group form-actions">
+		<div class="group-controls">
+			<button type="submit" class="btn btn-important"><?= _t('gen.action.submit'); ?></button>
+			<button type="reset" class="btn"><?= _t('gen.action.cancel'); ?></button>
+		</div>
+	</div>
+
+	<legend><?= _t('ext.reddit_image.section.misc') ?></legend>
+	<div class="form-group">
+		<label class="group-name" for="reddit-delay"><?= _t('ext.reddit_image.reddit_delay'); ?></label>
+		<div class="group-controls">
+            <input type="number" name="reddit-delay" id="reddit-delay" value="<?= $this->settings->getRedditDelay(); ?>" min="1" max="10"/>
+            <?= _t('ext.reddit_image.reddit_delay_unit'); ?>
+			<p class="help"><?= _i('help') ?> <?= _t('ext.reddit_image.help.reddit_delay') ?></p>
+		</div>
+	</div>
+
+	<div class="form-group form-actions">
+		<div class="group-controls">
+			<button type="submit" class="btn btn-important"><?= _t('gen.action.submit'); ?></button>
+			<button type="reset" class="btn"><?= _t('gen.action.cancel'); ?></button>
+		</div>
+	</div>
+</form>

@@ -1,0 +1,30 @@
+services:
+  netdata:
+    image: netdata/netdata:stable
+    container_name: netdata
+    hostname: debian-server  # Sets the display name in the Netdata header
+    restart: unless-stopped
+    # no longer privileges if exclusive to docker
+    #cap_add:
+    #  - SYS_PTRACE
+    #  - SYS_ADMIN
+    #security_opt:
+    #  - apparmor:unconfined
+    ports:
+      - "19999:19999"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.20'        # Very light footprint with only CPU/RAM enabled
+          memory: 128M
+    volumes:
+      - ./config/netdata/config:/etc/netdata
+      - ./config/netdata/lib:/var/lib/netdata
+      - ./config/netdata/cache:/var/cache/netdata
+      #- /etc/passwd:/etc/passwd:ro
+      #- /etc/group:/etc/group:ro
+      #- /proc:/host/proc:ro
+      #- /sys:/host/sys:ro
+      #- /etc/os-release:/host/etc/os-release:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro

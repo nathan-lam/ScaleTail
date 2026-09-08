@@ -40,12 +40,29 @@ Temporary Items
 # Secrets
 **/.env
 _secrets/*
+*/*cert.pem
+*/*key.pem
 
 # Misc
 *.code-workspace
-**/ollama-data/models/*
-**/stashapp-data/blobs/*
-**/stashapp-data/generated/*
+serve.json
 
+
+# User data
+**/ts/**
+**/caddy_config/*
+**/caddy_data/*
+**/homepage-data/*
+**/invidious/init-db/*
+**/invidious-data/db/*
+**/karakeep-data/*
+**/metube/downloads/*
+**/netdata/config/*
+**/ollama-data/models/*
+**/portainer-data/*
+**/stashapp-data/blobs/*
+**/stashapp-data/config/*
+**/stashapp-data/generated/*
+**/stashapp-data/tailscale/*
 
 # End of https://www.toptal.com/developers/gitignore/api/macos

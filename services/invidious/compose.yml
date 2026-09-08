@@ -1,0 +1,132 @@
+configs:
+  ts-serve:
+    content: |
+      {"TCP":{"443":{"HTTPS":true}},
+      "Web":{"$${TS_CERT_DOMAIN}:443":
+          {"Handlers":{"/":
+          {"Proxy":"http://127.0.0.1:3000"}}}},
+      "AllowFunnel":{"$${TS_CERT_DOMAIN}:443":false}}
+
+services:
+  # Tailscale Sidecar Configuration
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale-${SERVICE}
+    hostname: ${SERVICE}
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/serve.json
+      - TS_USERSPACE=false
+      - TS_ENABLE_HEALTH_CHECK=true
+      - TS_LOCAL_ADDR_PORT=127.0.0.1:41234
+      - TS_AUTH_ONCE=true
+    configs:
+      - source: ts-serve
+        target: /config/serve.json
+    volumes:
+      - ./config:/config
+      - ./ts/state:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - net_admin
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:41234/healthz"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: always
+
+  # PostgreSQL Database for Invidious
+  invidious-db:
+    image: docker.io/library/postgres:14
+    network_mode: service:tailscale
+    container_name: app-${SERVICE}-db
+    environment:
+      - POSTGRES_DB=invidious
+      - POSTGRES_USER=kemal
+      - POSTGRES_PASSWORD=${INVIDIOUS_DB_PASSWORD}
+    volumes:
+      - ./${SERVICE}-data/db:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d:ro  # Automatically seeds schemas on first boot
+    depends_on:
+      tailscale:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kemal -d invidious"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: always
+
+  # Invidious Companion Container
+  invidious-companion:
+    image: quay.io/invidious/invidious-companion:latest
+    network_mode: service:tailscale
+    container_name: app-${SERVICE}-companion
+    environment:
+      - SERVER_SECRET_KEY=${INVIDIOUS_COMPANION_KEY}
+    volumes:
+      - ./${SERVICE}-data/companion:/var/tmp/youtubei.js:rw
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      tailscale:
+        condition: service_healthy
+    restart: always
+
+  # Invidious Application
+  application:
+    image: quay.io/invidious/invidious:latest
+    network_mode: service:tailscale
+    container_name: app-${SERVICE}
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+      - |
+        INVIDIOUS_CONFIG=
+          db:
+            dbname: invidious
+            user: kemal
+            password: ${INVIDIOUS_DB_PASSWORD}
+            host: 127.0.0.1
+            port: 5432
+          external_port: 443
+          domain: ${TS_CERT_DOMAIN}
+          https_only: true
+          statistics_enabled: false
+          popular_enabled: false
+          channel_threads: 0
+          feed_threads: 0
+          enable_user_notifications: false
+          jobs:
+            clear_expired_items:
+              enabled: false
+            refresh_channels:
+              enabled: false
+            refresh_feeds:
+              enabled: false
+          invidious_companion:
+            - private_url: "http://127.0.0.1:8282/companion"
+          invidious_companion_key: "${INVIDIOUS_COMPANION_KEY}"
+          hmac_key: "${INVIDIOUS_HMAC_KEY}"
+    volumes:
+      - ./${SERVICE}-data/app/config:/config
+    depends_on:
+      tailscale:
+        condition: service_healthy
+      invidious-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-nv", "--tries=1", "--spider", "http://127.0.0.1:3000/api/v1/stats"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: always

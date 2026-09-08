@@ -15,6 +15,12 @@ services:
     image: tailscale/tailscale:latest # Image to be used
     container_name: tailscale-${SERVICE} # Name for local container management
     hostname: ${SERVICE} # Name used within your Tailscale environment
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
     environment:
       - TS_AUTHKEY=${TS_AUTHKEY}
       - TS_STATE_DIR=/var/lib/tailscale
@@ -22,7 +28,7 @@ services:
       - TS_USERSPACE=false
       - TS_ENABLE_HEALTH_CHECK=true # Enable healthcheck endpoint: "/healthz"
       - TS_LOCAL_ADDR_PORT=127.0.0.1:41234 # The <addr>:<port> for the healthz endpoint
-      #- TS_ACCEPT_DNS=true # Uncomment when using MagicDNS
+      - TS_ACCEPT_DNS=true # Uncomment when using MagicDNS
       - TS_AUTH_ONCE=true
     configs:
       - source: ts-serve
@@ -52,6 +58,10 @@ services:
     image: ${IMAGE_URL} # Image to be used
     network_mode: service:tailscale # Sidecar configuration to route ${SERVICE} through Tailscale
     container_name: app-${SERVICE} # Name for local container management
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     environment:
       - TAKE_FILE_OWNERSHIP=true
     volumes:
@@ -66,7 +76,7 @@ services:
       test:
         - CMD-SHELL
         - wget -qO- http://127.0.0.1:5232/.well-known/carddav || exit 1
-      interval: 1m # How often to perform the check
+      interval: 5m # How often to perform the check
       timeout: 10s # Time to wait for the check to succeed
       retries: 3 # Number of retries before marking as unhealthy
       start_period: 30s # Time to wait before starting health checks

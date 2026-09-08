@@ -1,0 +1,22 @@
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  playit:
+    image: ${IMAGE}
+    container_name: app-${SERVICE}
+    restart: unless-stopped
+    network_mode: host
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+    # Optional: Once setup, you can set your secret key as an env variable:
+    environment:
+      - SECRET_KEY=${PLAYIT_SECRET_KEY}
+    volumes:
+      - ./config/playit:/etc/playit
+    logging: *default-logging

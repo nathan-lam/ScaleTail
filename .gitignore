@@ -50,19 +50,14 @@ serve.json
 
 # User data
 **/ts/**
+**/*-data/*
 **/caddy_config/*
 **/caddy_data/*
-**/homepage-data/*
+**/freshrss/data/*
 **/invidious/init-db/*
-**/invidious-data/db/*
-**/karakeep-data/*
 **/metube/downloads/*
 **/netdata/config/*
-**/ollama-data/models/*
 **/portainer-data/*
-**/stashapp-data/blobs/*
-**/stashapp-data/config/*
-**/stashapp-data/generated/*
-**/stashapp-data/tailscale/*
+
 
 # End of https://www.toptal.com/developers/gitignore/api/macos

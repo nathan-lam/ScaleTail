@@ -12,6 +12,9 @@ services:
     #  - apparmor:unconfined
     ports:
       - "19999:19999"
+    environment:
+      - NETDATA_DISABLE_TELEMETRY=1
+      - DO_NOT_TRACK=1
     deploy:
       resources:
         limits:

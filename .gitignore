@@ -60,4 +60,17 @@ serve.json
 **/portainer-data/*
 
 
+
+# User data
+**/ts/**
+**/*-data/*
+**/caddy_config/*
+**/caddy_data/*
+**/freshrss/data/*
+**/invidious/init-db/*
+**/metube/downloads/*
+**/netdata/config/*
+**/portainer-data/*
+
+
 # End of https://www.toptal.com/developers/gitignore/api/macos

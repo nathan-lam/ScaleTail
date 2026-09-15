@@ -68,7 +68,7 @@ services:
       - ./${SERVICE}-data/cache:/cache
       - ./${SERVICE}-data/blobs:/blobs
       - ./${SERVICE}-data/generated:/generated
-      - ${STASH_MEDIA_PATH}:/data
+      - ${STASH_PATH}:/data
     depends_on:
       tailscale:
         condition: service_healthy

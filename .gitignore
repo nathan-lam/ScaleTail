@@ -53,6 +53,7 @@ serve.json
 **/*-data/*
 **/caddy_config/*
 **/caddy_data/*
+**/caddy/tailscale/tmp/*
 **/freshrss/data/*
 **/invidious/init-db/*
 **/metube/downloads/*

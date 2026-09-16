@@ -66,9 +66,11 @@ services:
           memory: 128M
     environment:
       - HOMEPAGE_ALLOWED_HOSTS=homepage.${TAILNET_NAME}.ts.net
+        #- NODE_OPTIONS=--max-old-space-size=64 # Triggers strict garbage collection at 64MB
     volumes:
       - ./${SERVICE}-data/config:/app/config
       - /var/run/docker.sock:/var/run/docker.sock:ro # optional, for docker integrations
+      - /mnt/Storage1:/Storage1:ro
     depends_on:
       tailscale:
         condition: service_healthy

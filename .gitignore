@@ -54,11 +54,15 @@ serve.json
 **/caddy_config/*
 **/caddy_data/*
 **/caddy/tailscale/tmp/*
+**/copyparty.conf
+**/copyparty/config/*
 **/freshrss/data/*
 **/invidious/init-db/*
 **/metube/downloads/*
 **/netdata/config/*
 **/portainer-data/*
+**/stashapp/config/*
+**/stashapp/generated/*
 
 
 

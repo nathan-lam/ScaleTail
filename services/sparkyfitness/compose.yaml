@@ -1,0 +1,130 @@
+configs:
+  ts-serve:
+    content: |
+      {"TCP":{"443":{"HTTPS":true}},
+      "Web":{"$${TS_CERT_DOMAIN}:443":
+          {"Handlers":{"/":
+          {"Proxy":"http://sparkyfitness-frontend:80"}}}},
+      "AllowFunnel":{"$${TS_CERT_DOMAIN}:443":false}}
+
+# 1. ADD A NAMED NETWORK AT THE TOP LEVEL
+networks:
+  sparkyfitness-network:
+    driver: bridge
+
+services:
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale-${SERVICE}
+    hostname: ${SERVICE}
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/serve.json
+      - TS_USERSPACE=false
+      - TS_ENABLE_HEALTH_CHECK=true
+      - TS_LOCAL_ADDR_PORT=127.0.0.1:41234
+      - TS_AUTH_ONCE=true
+    configs:
+      - source: ts-serve
+        target: /config/serve.json
+    volumes:
+      - ./config:/config
+      - ./ts/state:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - net_admin
+    # 2. ATTACH TAILSCALE TO THE NEW NETWORK
+    networks:
+      sparkyfitness-network:
+        aliases:                 # <-- YAML panics here!
+          - tailscale-${SERVICE}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:41234/healthz"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: always
+
+  sparkyfitness-server:
+    image: codewithcj/sparkyfitness_server:latest
+    network_mode: service:tailscale # Joins the network space of the tailscale service above
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+      - SPARKY_FITNESS_LOG_LEVEL=${SPARKY_FITNESS_LOG_LEVEL}
+      - ALLOW_PRIVATE_NETWORK_CORS=${ALLOW_PRIVATE_NETWORK_CORS:-false}
+      - SPARKY_FITNESS_EXTRA_TRUSTED_ORIGINS=${SPARKY_FITNESS_EXTRA_TRUSTED_ORIGINS:-}
+      - SPARKY_FITNESS_PUBLIC_API_DOCS=${SPARKY_FITNESS_PUBLIC_API_DOCS:-false}
+      - SPARKY_FITNESS_DB_USER=${SPARKY_FITNESS_DB_USER:-sparky}
+      - SPARKY_FITNESS_DB_HOST=sparkyfitness-db
+      - SPARKY_FITNESS_DB_NAME=${SPARKY_FITNESS_DB_NAME}
+      - SPARKY_FITNESS_DB_PASSWORD=${SPARKY_FITNESS_DB_PASSWORD:?Variable is required and must be set}
+      - SPARKY_FITNESS_APP_DB_USER=${SPARKY_FITNESS_APP_DB_USER:-sparkyapp}
+      - SPARKY_FITNESS_APP_DB_PASSWORD=${SPARKY_FITNESS_APP_DB_PASSWORD:?Variable is required and must be set}
+      - SPARKY_FITNESS_DB_PORT=5432
+      - SPARKY_FITNESS_API_ENCRYPTION_KEY=${SPARKY_FITNESS_API_ENCRYPTION_KEY:?Variable is required and must be set}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?Variable is required and must be set}
+      - SPARKY_FITNESS_FRONTEND_URL=${SPARKY_FITNESS_FRONTEND_URL:-http://0.0.0.0:3004}
+      - SPARKY_FITNESS_DISABLE_SIGNUP=${SPARKY_FITNESS_DISABLE_SIGNUP}
+      - SPARKY_FITNESS_ADMIN_EMAIL=${SPARKY_FITNESS_ADMIN_EMAIL}
+      - SPARKY_FITNESS_EMAIL_HOST=${SPARKY_FITNESS_EMAIL_HOST}
+      - SPARKY_FITNESS_EMAIL_PORT=${SPARKY_FITNESS_EMAIL_PORT}
+      - SPARKY_FITNESS_EMAIL_SECURE=${SPARKY_FITNESS_EMAIL_SECURE}
+      - SPARKY_FITNESS_EMAIL_USER=${SPARKY_FITNESS_EMAIL_USER}
+      - SPARKY_FITNESS_EMAIL_PASS=${SPARKY_FITNESS_EMAIL_PASS}
+      - SPARKY_FITNESS_EMAIL_FROM=${SPARKY_FITNESS_EMAIL_FROM}
+      - GARMIN_MICROSERVICE_URL=http://sparkyfitness-garmin:8000
+      - SPARKY_FITNESS_MCP_URL=${SPARKY_FITNESS_MCP_URL:-http://sparkyfitness-mcp:3001}
+    volumes:
+      - ${SERVER_BACKUP_PATH:-./backup}:/app/SparkyFitnessServer/backup
+      - ${SERVER_UPLOADS_PATH:-./uploads}:/app/SparkyFitnessServer/uploads
+    depends_on:
+      tailscale:
+        condition: service_healthy
+      sparkyfitness-db:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "node|server|app"] # Fallback check for application process
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: always
+
+  sparkyfitness-frontend:
+    image: codewithcj/sparkyfitness:latest
+    ports:
+      - "3004:80"
+    environment:
+      SPARKY_FITNESS_FRONTEND_URL: ${SPARKY_FITNESS_FRONTEND_URL}
+      # Point to the tailscale container alias since the server shares its network space
+      SPARKY_FITNESS_SERVER_HOST: tailscale-${SERVICE}
+      SPARKY_FITNESS_SERVER_PORT: 3010
+      PUID: 1000
+      GUID: 1000
+    # 3. ATTACH FRONTEND TO THE NEW NETWORK
+    networks:
+      - sparkyfitness-network
+    restart: always
+    depends_on:
+      - tailscale
+
+  sparkyfitness-db:
+    image: postgres:18.3-alpine
+    container_name: sparkyfitness-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${SPARKY_FITNESS_DB_NAME:?Variable is required and must be set}
+      POSTGRES_USER: ${SPARKY_FITNESS_DB_USER:?Variable is required and must be set}
+      POSTGRES_PASSWORD: ${SPARKY_FITNESS_DB_PASSWORD:?Variable is required and must be set}
+      PUID: 1000
+      GUID: 1000
+    volumes:
+      - ${DB_PATH:-./postgresql}:/var/lib/postgresql
+    # 4. ATTACH DATABASE TO THE NEW NETWORK
+    networks:
+      - sparkyfitness-network

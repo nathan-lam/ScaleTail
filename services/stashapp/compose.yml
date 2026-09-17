@@ -68,7 +68,7 @@ services:
       - ./${SERVICE}-data/cache:/cache
       - ./${SERVICE}-data/blobs:/blobs
       - ./${SERVICE}-data/generated:/generated
-      - ${STASH_PATH}:/data
+      - ${STASH_PATH}/data:/data
     depends_on:
       tailscale:
         condition: service_healthy
@@ -78,4 +78,3 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-      

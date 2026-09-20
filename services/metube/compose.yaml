@@ -56,7 +56,8 @@ services:
       - PGID=1000
       - TZ=${TZ}
     volumes:
-      - ./downloads:/downloads
+      #- ./downloads:/downloads
+      - ${METUBE_PATH}:/downloads
     depends_on:
       tailscale:
         condition: service_healthy

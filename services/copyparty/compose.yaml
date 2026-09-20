@@ -10,16 +10,18 @@ configs:
   copyparty-config:
     content: |
       [global]
-      e2dsa
+      e2dsa  # enable file indexing and filesystem scanning
+      e2ts   # and enable multimedia indexing
+      z, qr  # and zeroconf and qrcode (you can comma-separate arguments)
       rproxy: -1
 
       [accounts]
-      admin:changeme
+      ${COPYPARTY_USERNAME}:${COPYPARTY_PASSWORD}
 
       [/]
       /data
       accs:
-        rw: admin
+        rw: ${COPYPARTY_USERNAME}
 
 services:
 # Make sure you have updated/checked the .env file with the correct variables. 
@@ -72,7 +74,8 @@ services:
         target: /cfg/copyparty.conf
     volumes:
       - ./config:/cfg:z
-      - /path/to/your/fileshare/top/folder:/w:z # Make sure to adjust to the location you want
+      #- /path/to/your/fileshare/top/folder:/w:z # Make sure to adjust to the location you want
+      - ${DATA_PATH}:/data:z
     depends_on:
       tailscale:
         condition: service_healthy

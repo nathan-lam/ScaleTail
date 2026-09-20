@@ -1,0 +1,18 @@
+services:
+  syncthing:
+    image: lscr.io/linuxserver/syncthing:latest
+    container_name: syncthing
+    hostname: syncthing # Optional: set your device name here
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+    volumes:
+      - ./config:/config
+      - ./${DATA_PATH}:/DATAHOARD
+    ports:
+      - 8384:8384 # Web UIs
+      - 22000:22000/tcp # TCP file transfer
+      - 22000:22000/udp # UDP file transfer
+      - 21027:21027/udp # Local discovery
+    restart: unless-stopped

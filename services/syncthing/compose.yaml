@@ -9,9 +9,10 @@ services:
       - TZ=${TZ}
     volumes:
       - ./config:/config
-      - ./${DATA_PATH}:/DATAHOARD
+      #- ./${DATA_PATH}:/DATAHOARD
+      - /mnt/storage_WD_01/PROJECTS/DATAHOARD:/DATAHOARD
     ports:
-      - 8384:8384 # Web UIs
+      - 8384:8384 # Web UI
       - 22000:22000/tcp # TCP file transfer
       - 22000:22000/udp # UDP file transfer
       - 21027:21027/udp # Local discovery

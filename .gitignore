@@ -47,7 +47,6 @@ _secrets/*
 *.code-workspace
 serve.json
 
-
 # User data
 **/ts/**
 **/*-data/*
@@ -63,19 +62,7 @@ serve.json
 **/portainer-data/*
 **/stashapp/config/*
 **/stashapp/generated/*
-
-
-
-# User data
-**/ts/**
-**/*-data/*
-**/caddy_config/*
-**/caddy_data/*
-**/freshrss/data/*
-**/invidious/init-db/*
-**/metube/downloads/*
-**/netdata/config/*
-**/portainer-data/*
+**/syncthing/config/*
 
 
 # End of https://www.toptal.com/developers/gitignore/api/macos

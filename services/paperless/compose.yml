@@ -66,10 +66,11 @@ services:
       start_period: 30s # Time to wait before starting health checks
     restart: always
     volumes:
-      - ./${SERVICE}-data/data:/usr/src/paperless/data
-      - ./${SERVICE}-data/media:/usr/src/paperless/media
-      - ./${SERVICE}-data/export:/usr/src/paperless/export
-      - ./${SERVICE}-data/consume:/usr/src/paperless/consume
+      #- ./${SERVICE}-data/data:/usr/src/paperless/data
+      #- ./${SERVICE}-data/media:/usr/src/paperless/media
+      #- ./${SERVICE}-data/export:/usr/src/paperless/export
+      #- ./${SERVICE}-data/consume:/usr/src/paperless/consume
+      - 
     environment:
       - PUID=1000
       - PGID=1000

@@ -6,6 +6,7 @@
   var isAdmin = false;
   var isWritable = false;
   var queued = {};
+  var pendingSelf = null;
 
   var _initRetries = 0;
   function init() {
@@ -22,6 +23,7 @@
     isAdmin = !!extConfig.configuration.is_admin;
     isWritable = !!extConfig.configuration.writable;
     queued = extConfig.configuration.queued || {};
+    pendingSelf = extConfig.configuration.pendingSelf || null;
 
     if (!isExtensionsPage()) return;
 
@@ -184,7 +186,7 @@
 
     var input = document.createElement('input');
     input.type = 'url';
-    input.placeholder = 'https://github.com/user/repo';
+    input.placeholder = 'https://github.com/user/repo  (or .../tree/branch)';
     input.className = 'ext-mgr-url-input';
 
     var btn = document.createElement('button');
@@ -195,8 +197,10 @@
     btn.addEventListener('click', function () {
       var url = input.value.trim();
       if (!url) return;
-      if (!/^https:\/\/github\.com\/[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/.test(url)) {
-        showNotification('Only GitHub repository URLs are supported', true);
+      // Optional /tree/<branch>; branch names may contain slashes (fix/foo).
+      // Mirrors parseSource() in extension.php — keep the two in step.
+      if (!/^https:\/\/github\.com\/[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+(\/tree\/[A-Za-z0-9][A-Za-z0-9._/-]*)?$/.test(url)) {
+        showNotification('Expected https://github.com/owner/repo, optionally with /tree/branch', true);
         return;
       }
 
@@ -254,6 +258,18 @@
     main.appendChild(container);
   }
 
+  /**
+   * "https://github.com/owner/repo/tree/fix/foo" -> {repo: "owner/repo", branch: "fix/foo"}
+   * Mirrors parseSource() in extension.php.
+   */
+  function splitSource(url) {
+    var m = /^https:\/\/github\.com\/([a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+)(?:\/tree\/(.+))?$/.exec(
+      String(url).replace(/\/+$/, '')
+    );
+    if (!m) return { repo: String(url).replace('https://github.com/', ''), branch: null };
+    return { repo: m[1], branch: m[2] || null };
+  }
+
   function loadSingleRepoCatalog(repoUrl) {
     var main = document.querySelector('.post') || document.querySelector('#content') || document.body;
 
@@ -261,7 +277,19 @@
     section.className = 'ext-mgr-repo-section';
 
     var heading = document.createElement('h3');
-    heading.textContent = repoUrl.replace('https://github.com/', '');
+    var parts = splitSource(repoUrl);
+    heading.textContent = parts.repo;
+    if (parts.branch) {
+      // Two sources can differ only by branch, so the branch has to be visible
+      // on the heading — otherwise the page shows the same extension twice with
+      // no way to tell which table installs what.
+      var tag = document.createElement('span');
+      tag.className = 'ext-mgr-branch';
+      tag.textContent = parts.branch;
+      tag.title = 'Branch: ' + parts.branch;
+      heading.appendChild(document.createTextNode(' '));
+      heading.appendChild(tag);
+    }
     section.appendChild(heading);
 
     var loading = document.createElement('p');
@@ -414,6 +442,7 @@
       var extUrl = nameLink.getAttribute('href');
       var extName = nameLink.textContent.trim();
       var catalogVersion = cells[1].textContent.trim();
+      var isGitHub = extUrl && /^https:\/\/github\.com\//.test(extUrl);
 
       // Insert Installed column before Version
       var installedTd = document.createElement('td');
@@ -424,7 +453,7 @@
       var actionTd = document.createElement('td');
 
       if (info) {
-        if (isAdmin && catalogVersion && info.version && compareVersions(catalogVersion, info.version) > 0) {
+        if (isAdmin && isGitHub && catalogVersion && info.version && compareVersions(catalogVersion, info.version) > 0) {
           actionTd.appendChild(makeInstallButton('Update', extUrl, extName, null, null));
         } else {
           var badge = document.createElement('span');
@@ -432,7 +461,7 @@
           badge.textContent = '\u2713 Installed';
           actionTd.appendChild(badge);
         }
-      } else if (isAdmin && extUrl) {
+      } else if (isAdmin && isGitHub) {
         actionTd.appendChild(makeInstallButton('Install', extUrl, extName, null, null));
       }
 
@@ -466,6 +495,8 @@
       installedByName[installed[dir].name] = {
         dir: dir,
         version: String(installed[dir].version),
+        branch: installed[dir].branch || null,
+        source: installed[dir].source || null,
       };
     }
 
@@ -480,6 +511,17 @@
 
       var tdInstalled = document.createElement('td');
       tdInstalled.textContent = info ? info.version : '';
+      // Only one copy of a given extension can be installed at a time, so when
+      // the installed copy came from a different branch than this table, say so
+      // — otherwise both tables claim the same version and neither is wrong.
+      if (info && info.branch && info.branch !== ext.branch) {
+        var from = document.createElement('span');
+        from.className = 'ext-mgr-branch ext-mgr-branch-other';
+        from.textContent = info.branch;
+        from.title = 'Installed from ' + (info.source || '') + ' @ ' + info.branch;
+        tdInstalled.appendChild(document.createTextNode(' '));
+        tdInstalled.appendChild(from);
+      }
       tr.appendChild(tdInstalled);
 
       var tdVersion = document.createElement('td');
@@ -493,12 +535,19 @@
       var tdAction = document.createElement('td');
 
       if (ext.dir === 'xExtension-ExtensionManager') {
-        var selfBadge = document.createElement('span');
-        selfBadge.className = 'ext-mgr-installed-badge';
-        selfBadge.textContent = '(self)';
-        tdAction.appendChild(selfBadge);
+        tdAction.appendChild(selfAction(ext, info, catalogToken));
       } else if (info) {
-        if (isAdmin && compareVersions(String(ext.version), info.version) > 0) {
+        // Only one copy can be installed, so a section whose source is not the
+        // one the installed copy came from offers a switch rather than an
+        // update \u2014 see branchMoveLabel() for when that offer is worth making.
+        // Origin unknown (installed before source markers, no sidecar) falls
+        // through to the version comparison: an install we cannot place is not
+        // evidence that it came from somewhere else.
+        var moveLabel = branchMoveLabel(info, ext);
+
+        if (isAdmin && moveLabel) {
+          tdAction.appendChild(makeInstallButton(moveLabel, null, ext.name, ext.dir, catalogToken));
+        } else if (isAdmin && compareVersions(String(ext.version), info.version) > 0) {
           tdAction.appendChild(makeInstallButton('Update', null, ext.name, ext.dir, catalogToken));
         } else {
           var badge = document.createElement('span');
@@ -518,14 +567,159 @@
     return table;
   }
 
-  function makeInstallButton(label, extUrl, extName, extDir, catalogToken) {
+  // Extension Manager cannot copy over itself while it is the code serving the
+  // request, so its update is two named steps: Download update fetches and
+  // verifies a copy alongside the running one, Apply update swaps them at the
+  // start of the next request. Each button says what it does; neither of them
+  // is a reload, even though applying ends in one.
+  // The one place that decides whether a row offers to move between sources.
+  // Both the ordinary rows and the Extension Manager row call it — last time
+  // the self row had its own copy of this test, it kept a one-way door through
+  // two releases.
+  //
+  // Origin differing is not on its own a reason to offer anything: with develop
+  // fast-forwarded to main, every row was offering to switch to byte-identical
+  // code, which reads as an available update. So the offer needs a difference
+  // the user can see — a different version — with one exception: the release
+  // branch always offers a way back, or an install that has drifted onto a side
+  // branch at the same version has no route home.
+  function branchMoveLabel(info, ext) {
+    var originKnown = !!(info && (info.source || info.branch));
+    if (!originKnown) return null;
+
+    var differentSource = (info.source || null) !== (ext.url || null) ||
+      (info.branch || null) !== (ext.branch || null);
+    if (!differentSource) return null;
+
+    var versionsDiffer = compareVersions(String(ext.version), String(info.version)) !== 0;
+    var isReleaseBranch = ext.branch === 'main' || ext.branch === 'master';
+    if (!versionsDiffer && !isReleaseBranch) return null;
+
+    return 'Switch to ' + (ext.branch || 'this source');
+  }
+
+  function selfAction(ext, info, catalogToken) {
+    if (pendingSelf) {
+      // There is one staged copy, not one per section, so Apply belongs only to
+      // the section it came from. Rendering it everywhere made every source
+      // look like it had something waiting, and two sections offering to apply
+      // different things is a claim the staging area cannot honour.
+      var stagedHere = (pendingSelf.source || null) === (ext.url || null) &&
+        (pendingSelf.branch || null) === (ext.branch || null);
+      if (!stagedHere) {
+        var elsewhere = document.createElement('span');
+        elsewhere.className = 'ext-mgr-staged-note';
+        elsewhere.textContent = 'staged from ' + (pendingSelf.branch || 'another source');
+        elsewhere.title = 'Only one copy can be staged at a time — apply or discard it in that section first';
+        return elsewhere;
+      }
+
+      var wrap = document.createElement('span');
+      wrap.className = 'ext-mgr-self-pending';
+      // Applying a copy from a different branch is a move, not an upgrade, and
+      // may well be a downgrade — the button should not call it an update.
+      var stagedIsSwitch = !!(info && (info.branch || info.source) &&
+        ((pendingSelf.branch || null) !== (info.branch || null) ||
+         (pendingSelf.source || null) !== (info.source || null)));
+      wrap.appendChild(makeApplyButton(pendingSelf.version, stagedIsSwitch));
+      var note = document.createElement('span');
+      note.className = 'ext-mgr-staged-note';
+      note.textContent = (pendingSelf.version || 'staged') +
+        (pendingSelf.branch ? ' from ' + pendingSelf.branch : '') + ' verified';
+      wrap.appendChild(note);
+      // Staging is reversible and should look it — without this the only way
+      // out of a staged copy you have changed your mind about is deleting the
+      // directory by hand.
+      wrap.appendChild(makeDiscardButton());
+      return wrap;
+    }
+
+    var newer = info && compareVersions(String(ext.version), info.version) > 0;
+    // A move between sources is named for the move, never "update" — the other
+    // branch is usually level or behind, so anything reading like an update
+    // advertises one that does not exist.
+    var moveLabel = branchMoveLabel(info, ext);
+
+    if (isAdmin && isWritable && (newer || moveLabel)) {
+      return makeInstallButton(moveLabel || 'Download update', null, ext.name, ext.dir, catalogToken);
+    }
+
+    var badge = document.createElement('span');
+    badge.className = 'ext-mgr-installed-badge';
+    // Without a writable extensions directory the swap cannot happen at all,
+    // and saying "(self)" would hide the reason.
+    badge.textContent = (newer || moveLabel) && !isWritable
+      ? 'available — run install-queued.sh'
+      : '(self)';
+    return badge;
+  }
+
+  function makeApplyButton(version, isSwitch) {
+    var label = isSwitch ? 'Apply switch' : 'Apply update';
     var btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'ext-mgr-btn ' + (label === 'Update' ? 'ext-mgr-update' : 'ext-mgr-install');
+    btn.className = 'ext-mgr-btn ext-mgr-switch';
+    btn.textContent = label;
+    btn.title = version ? 'Replace the running Extension Manager with the verified ' + version + ' copy' : '';
+    btn.addEventListener('click', function () {
+      btn.disabled = true;
+      btn.textContent = 'Applying...';
+      apiCall('applyself', {}).then(function (data) {
+        if (data.success) {
+          window.location.reload();
+        } else {
+          btn.disabled = false;
+          btn.textContent = label;
+          showNotification(data.error || 'Could not apply the update', true);
+        }
+      }).catch(function (err) {
+        btn.disabled = false;
+        btn.textContent = label;
+        showNotification('Error: ' + err.message, true);
+      });
+    });
+    return btn;
+  }
+
+  function makeDiscardButton() {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ext-mgr-discard';
+    btn.textContent = 'Discard';
+    btn.title = 'Delete the staged copy; the running version is not touched';
+    btn.addEventListener('click', function () {
+      btn.disabled = true;
+      apiCall('discardself', {}).then(function (data) {
+        if (data.success) {
+          window.location.reload();
+        } else {
+          btn.disabled = false;
+          showNotification(data.error || 'Could not discard the staged copy', true);
+        }
+      }).catch(function (err) {
+        btn.disabled = false;
+        showNotification('Error: ' + err.message, true);
+      });
+    });
+    return btn;
+  }
+
+  function makeInstallButton(label, extUrl, extName, extDir, catalogToken) {
+    // Green should mean "not installed yet" and nothing else, so a switch keeps
+    // its own colour whether it completes in one step or two.
+    var isDownload = label.indexOf('Download') === 0;
+    var isSwitch = label.indexOf('Switch') === 0;
+    var variant = label === 'Update' ? 'ext-mgr-update' : (isSwitch ? 'ext-mgr-switch' : 'ext-mgr-install');
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ext-mgr-btn ' + variant;
     btn.textContent = label;
     btn.addEventListener('click', function () {
       btn.disabled = true;
-      btn.textContent = label === 'Install' ? 'Installing...' : 'Updating...';
+      btn.textContent = label === 'Install' ? 'Installing...'
+        : isDownload ? 'Downloading...'
+        : isSwitch ? 'Switching...'
+        : 'Updating...';
 
       var params = {};
       if (extDir && catalogToken) {
@@ -543,10 +737,17 @@
             // Update queued state and show banner if not already visible
             queued[extDir || extName] = { name: extName, action: 'install' };
             refreshQueuedBanner();
+          } else if (data.staged) {
+            // Downloaded and verified, nothing replaced yet \u2014 the reload brings
+            // back the row with an Apply update button.
+            btn.textContent = 'Downloaded';
+            btn.className = 'ext-mgr-btn ext-mgr-done';
+            showNotification(data.message || (extName + ' downloaded and verified \u2014 apply it to finish'));
+            setTimeout(function () { window.location.reload(); }, 1200);
           } else {
             btn.textContent = '\u2713 Done';
             btn.className = 'ext-mgr-btn ext-mgr-done';
-            showNotification(extName + ' ' + (label === 'Install' ? 'installed' : 'updated'));
+            showNotification(extName + ' ' + (label === 'Install' ? 'installed' : (isSwitch ? 'switched to ' + label.replace(/^Switch to /, '') : 'updated')));
             setTimeout(function () { window.location.reload(); }, 1500);
           }
         } else {

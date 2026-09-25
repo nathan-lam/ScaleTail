@@ -224,19 +224,8 @@ class YoulagExtension extends Minz_Extension
         $val = FreshRSS_Context::userConf()->attributeArray(
             "yl_category_whitelist",
         );
-        $attributes = is_array(value: FreshRSS_Context::$user_conf->_attributes)
-            ? FreshRSS_Context::$user_conf->_attributes
-            : [];
         // Default video mode to ['all'] when Youlag is activated for the first time.
-        if (
-            !is_array(value: $val) ||
-            (is_array(value: $val) &&
-                count(value: $val) === 0 &&
-                !array_key_exists(
-                    key: "yl_category_whitelist",
-                    array: $attributes,
-                ))
-        ) {
+        if (!is_array(value: $val) || count(value: $val) === 0) {
             $this->yl_category_whitelist = ["all"];
         } else {
             $this->yl_category_whitelist = $val;

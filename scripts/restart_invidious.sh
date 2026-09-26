@@ -4,13 +4,21 @@
 
 # --- CONFIGURATION ---
 # Set the absolute path to the directory containing your docker-compose.yml
-COMPOSE_DIR="~/PROJECTS/ScaleTail/services/invidious"
-
-# Log file path
-LOG_FILE="~/PROJECTS/ScailTail/logs/invidious-restart.log"
+COMPOSE_DIR="$HOME/PROJECTS/ScaleTail/services/invidious"
+LOG_DIR="$HOME/PROJECTS/ScaleTail/logs"
+LOG_FILE="$LOG_DIR/invidious-restart.log"
 # ---------------------
 
+mkdir -p "$LOG_DIR"
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting Invidious daily restart..." >> "$LOG_FILE"
+
+
+# Keep the log file under 1MB by clearing it if it gets too large
+MAX_SIZE=$((1024 * 1024)) # 1MB in bytes
+if [ -f "$LOG_FILE" ] && [ $(stat -f%z "$LOG_FILE" 2>/dev/null || stat -c%s "$LOG_FILE" 2>/dev/null) -gt $MAX_SIZE ]; then
+    tail -n 50 "$LOG_FILE" > "$LOG_FILE.tmp" && mv "$LOG_FILE.tmp" "$LOG_FILE"
+fi
+
 
 # Navigate to the compose directory
 cd "$COMPOSE_DIR" || {
@@ -18,9 +26,11 @@ cd "$COMPOSE_DIR" || {
     exit 1
 }
 
-# Restart the containers defined in docker-compose.yml
-# You can use 'restart' or 'down' followed by 'up -d' if a fresh start is preferred
-docker compose restart >> "$LOG_FILE" 2>&1
+# Restart the containers
+docker compose down >> "$LOG_FILE" 2>&1
+sleep 3
+docker compose up -d >> "$LOG_FILE" 2>&1
+
 
 if [ $? -eq 0 ]; then
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] SUCCESS: Invidious restarted successfully." >> "$LOG_FILE"

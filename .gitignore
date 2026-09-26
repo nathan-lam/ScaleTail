@@ -47,6 +47,7 @@ _secrets/*
 *.code-workspace
 serve.json
 .stfolder
+logs/*
 
 # User data
 **/ts/**

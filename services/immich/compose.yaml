@@ -22,7 +22,7 @@ services:
       - TS_USERSPACE=false
       - TS_ENABLE_HEALTH_CHECK=true # Enable healthcheck endpoint: "/healthz"
       - TS_LOCAL_ADDR_PORT=127.0.0.1:41234 # The <addr>:<port> for the healthz endpoint
-      - TS_ACCEPT_DNS=true # Uncomment when using MagicDNS
+      #- TS_ACCEPT_DNS=true # Uncomment when using MagicDNS
       - TS_AUTH_ONCE=true
     configs:
       - source: ts-serve
@@ -58,6 +58,7 @@ services:
     volumes:
       # Do not edit the next line. If you want to change the media storage location on your system, edit the value of UPLOAD_LOCATION in the .env file
       - ./${SERVICE}-data/upload:/data
+      - ${IMMICH_PATH}:/Pictures_irl
       - /etc/localtime:/etc/localtime:ro
     env_file:
       - .env

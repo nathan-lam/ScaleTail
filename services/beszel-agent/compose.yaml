@@ -40,7 +40,7 @@ services:
     container_name: app-${SERVICE} # Name for local container management
     environment:
       PORT: 45876
-      KEY: "ssh-ed25519 <ADD-YOUR-beszel-agent-KEY-HERE>"
+      KEY: ${BESZEL_AGENT_KEY}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro # Read-only access to the docker.sock
     depends_on:

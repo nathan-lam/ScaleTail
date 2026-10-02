@@ -90,17 +90,19 @@ ScaleTail provides ready-to-run [Docker Compose](https://docs.docker.com/compose
 
 ### 🎥 Media and Entertainment
 
-| 🎥 Service            | 📝 Description                                                                                           | 🔗 Link                             |
-| -------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| 🎥 Service            | 📝 Description                                                                                          | 🔗 Link                            |
+| --------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------- |
 | 🎵 **ArtistTrackarr** | A self-hosted dashboard for tracking upcoming and newly released albums and EPs.                        | [Details](services/artisttrackarr) |
 | 🎧 **Audiobookshelf** | A self-hosted audiobook and podcast server with multi-user support and playback syncing.                | [Details](services/audiobookshelf) |
 | 🎥 **Bazarr**         | A companion tool to Radarr and Sonarr for managing subtitles.                                           | [Details](services/bazarr)         |
 | 📚 **BookLore**       | A self-hosted application for managing and reading books.                                               | [Details](services/booklore)       |
+| 🎮 **Calagopus**      | (WIP) A Game Server panel based on Pterodactyl                                                          | [Details](services/calagopus)      |
 | 📰 **FreshRSS**       | A customizable feed reader with themes, extensions, and no separate database.                           | [Details](services/freshrss)       |
 | 🎥 **Frigate**        | A self-hosted NVR with real-time AI object detection for IP cameras and local video monitoring.         | [Details](services/frigate)        |
 | 🎮 **Hytale**         | A self-hosted Hytale game server.                                                                       | [Details](services/hytale)         |
-| ⛏️ **Minecraft**       | A self-hosted Minecraft Java Edition server for private Tailnet multiplayer.                            | [Details](services/minecraft)      |
+| ⛏️ **Minecraft**      | A self-hosted Minecraft Java Edition server for private Tailnet multiplayer.                            | [Details](services/minecraft)      |
 | 🖼️ **Immich**         | A self-hosted Google Photos alternative with face recognition and mobile sync.                          | [Details](services/immich)         |
+| 🖥 **Invidious**      | A YouTube client                                                                                        | [Details](services/invidious)      |
 | 📺 **Jellyfin**       | An open-source media system that puts you in control of managing and streaming your media.              | [Details](services/jellyfin)       |
 | 📖 **Kavita**         | An open-source, self-hosted digital library for comics, manga, and ebooks.                              | [Details](services/kavita)         |
 | 📻 **Miniflux**       | A minimalist and opinionated feed reader.                                                               | [Details](services/miniflux)       |
@@ -113,6 +115,7 @@ ScaleTail provides ready-to-run [Docker Compose](https://docs.docker.com/compose
 | 📥 **qBittorrent**    | An open-source BitTorrent client.                                                                       | [Details](services/qbittorrent)    |
 | 📡 **Prowlarr**       | An indexer manager and proxy for applications like Radarr, Sonarr, and Lidarr.                          | [Details](services/prowlarr)       |
 | 🎞️ **Radarr**         | A movie collection manager for Usenet and BitTorrent users.                                             | [Details](services/radarr)         |
+| 📦 **Stash**          | ( ͡° ͜ʖ ͡°)                                                                                                | [Details](services/stashapp)       |
 | 📡 **Sonarr**         | A PVR for Usenet and BitTorrent users to manage TV series.                                              | [Details](services/sonarr)         |
 | 🔗 **Slink**          | A fast, self-hosted alternative to ShareDrop for secure local file sharing.                             | [Details](services/slink)          |
 | 📊 **Tautulli**       | A monitoring and tracking tool for Plex Media Server.                                                   | [Details](services/tautulli)       |
@@ -157,6 +160,7 @@ ScaleTail provides ready-to-run [Docker Compose](https://docs.docker.com/compose
 | 🔗 **Pingvin Share** | **PROJECT ARCHIVED** A self-hosted file sharing platform.                                                                                                                  | [Details](services/pingvin-share) |
 | 📅 **Radicale**      | A lightweight CalDAV and CardDAV server for self-hosted calendar, to-do, and contact sync.                                                                                 | [Details](services/radicale)      |
 | 🔄 **Resilio Sync**  | A fast, reliable, and simple file sync and share solution.                                                                                                                 | [Details](services/resilio-sync)  |
+| 🏃 **SparkyFitness** | (WIP) Selfhosted MyFitnessPal alternative                                                                                                                                  | [Details](services/sparkyfitness) |
 | 📁 **Seafile**       | A self-hosted file syncing and collaboration platform with file sharing, versioning, and team library support.                                                             | [Details](services/seafile)       |
 | 🗂️ **Stirling-PDF**  | A web application for managing and editing PDF files.                                                                                                                      | [Details](services/stirlingpdf)   |
 | 💰 **Sure Finance**  | A self-hosted personal finance and budgeting app with optional AI insights.                                                                                                | [Details](services/sure)          |

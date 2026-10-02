@@ -72,6 +72,7 @@ services:
     depends_on:
       tailscale:
         condition: service_healthy
+<<<<<<< HEAD
     healthcheck:
       test:
         - CMD-SHELL
@@ -80,4 +81,7 @@ services:
       timeout: 10s # Time to wait for the check to succeed
       retries: 3 # Number of retries before marking as unhealthy
       start_period: 30s # Time to wait before starting health checks
+=======
+    # Healthcheck: defined by the image (curl against the web UI), so this file does not override it.
+>>>>>>> upstream/main
     restart: always

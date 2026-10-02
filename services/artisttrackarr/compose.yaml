@@ -22,7 +22,7 @@ services:
       - TS_USERSPACE=false
       - TS_ENABLE_HEALTH_CHECK=true              # Enable healthcheck endpoint: "/healthz"
       - TS_LOCAL_ADDR_PORT=127.0.0.1:41234       # The <addr>:<port> for the healthz endpoint
-      #- TS_ACCEPT_DNS=true # Uncomment when using MagicDNS
+      #- TS_ACCEPT_DNS=true # Uncomment only if the service must resolve MagicDNS names - this replaces Docker DNS, so Compose service names no longer resolve
       - TS_AUTH_ONCE=true
     configs:
       - source: ts-serve
@@ -52,7 +52,7 @@ services:
     image: ${IMAGE_URL} # Image to be used
     network_mode: service:tailscale # Sidecar configuration to route ${SERVICE} through Tailscale
     container_name: app-${SERVICE} # Name for local container management
-    environment: # Varibles are delared in .env file.
+    environment: # Variables are declared in .env file.
       PUID: 1000
       PGI: 1000
       TZ: ${TZ}
@@ -82,7 +82,7 @@ services:
       tailscale:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/readyz"] # Check if ${SERVICE} process is running
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/readyz"] # Check if the service is responding
       interval: 1m # How often to perform the check
       timeout: 10s # Time to wait for the check to succeed
       retries: 3 # Number of retries before marking as unhealthy

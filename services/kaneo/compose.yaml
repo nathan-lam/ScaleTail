@@ -24,7 +24,7 @@ services:
       - TS_USERSPACE=false
       - TS_ENABLE_HEALTH_CHECK=true              # Enable healthcheck endpoint: "/healthz"
       - TS_LOCAL_ADDR_PORT=127.0.0.1:41234       # The <addr>:<port> for the healthz endpoint
-      #- TS_ACCEPT_DNS=true # Uncomment when using MagicDNS
+      #- TS_ACCEPT_DNS=true # Uncomment only if the service must resolve MagicDNS names - this replaces Docker DNS, so Compose service names no longer resolve
       - TS_AUTH_ONCE=true
     configs:
       - source: ts-serve
@@ -63,12 +63,12 @@ services:
     volumes:
       - ./${SERVICE}-data/postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ${DB_USERNAME} -d ${DB_DATABASE_NAME}"] # Check if PostgreSQL accepts connections
       interval: 10s # How often to perform the check
       timeout: 5s # Time to wait for the check to succeed
       retries: 5 # Number of retries before marking as unhealthy
       start_period: 30s # Time to wait before starting health checks
-    restart: unless-stopped
+    restart: always
 
   # ${SERVICE} - Backend (API)
   backend:
@@ -84,7 +84,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    restart: unless-stopped
+    # Healthcheck: defined by the image (wget against /api/health), so this file does not override it.
+    restart: always
 
   # ${SERVICE} - Frontend (Web)
   frontend:
@@ -98,7 +99,13 @@ services:
         condition: service_healthy
       backend:
         condition: service_started
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:5173/"] # Check if the service is responding
+      interval: 1m # How often to perform the check
+      timeout: 10s # Time to wait for the check to succeed
+      retries: 3 # Number of retries before marking as unhealthy
+      start_period: 30s # Time to wait before starting health checks
+    restart: always
 
 volumes:
   postgres_data:

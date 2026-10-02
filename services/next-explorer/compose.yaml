@@ -22,7 +22,7 @@ services:
       - TS_USERSPACE=false
       - TS_ENABLE_HEALTH_CHECK=true              # Enable healthcheck endpoint: "/healthz"
       - TS_LOCAL_ADDR_PORT=127.0.0.1:41234       # The <addr>:<port> for the healthz endpoint
-      #- TS_ACCEPT_DNS=true # Uncomment when using MagicDNS
+      #- TS_ACCEPT_DNS=true # Uncomment only if the service must resolve MagicDNS names - this replaces Docker DNS, so Compose service names no longer resolve
       - TS_AUTH_ONCE=true
     configs:
       - source: ts-serve
@@ -52,12 +52,11 @@ services:
     image: ${IMAGE_URL}
     network_mode: service:tailscale # Sidecar configuration to route ${SERVICE} through Tailscale
     container_name: app-${SERVICE}
-    restart: unless-stopped
-    #ports:
-    #  - 0.0.0.0:${SERVICEPORT}:${SERVICEPORT} # Binding port ${SERVICE}PORT to the local network - may be removed if only exposure to your Tailnet is required
-    # If any DNS issues arise, use your preferred DNS provider by uncommenting the config below
-    #dns: 
-     # - ${DNS_SERVER}
+    depends_on:
+      tailscale:
+        condition: service_healthy
+    # Healthcheck: defined by the image (node healthcheck.js), so this file does not override it.
+    restart: always
     environment:
       - NODE_ENV=production
       - PUBLIC_URL=${PUBLIC_URL} # Optional: Set this to the public URL of your service if needed for correct URL generation in the app. For example, if you are exposing the service at https://example.com, set PUBLIC_URL=https://example.com.

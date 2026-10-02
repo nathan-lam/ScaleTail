@@ -22,7 +22,7 @@ services:
       - TS_USERSPACE=false
       - TS_ENABLE_HEALTH_CHECK=true              # Enable healthcheck endpoint: "/healthz"
       - TS_LOCAL_ADDR_PORT=127.0.0.1:41234       # The <addr>:<port> for the healthz endpoint
-      #- TS_ACCEPT_DNS=true # Uncomment when using MagicDNS
+      #- TS_ACCEPT_DNS=true # Uncomment only if the service must resolve MagicDNS names - this replaces Docker DNS, so Compose service names no longer resolve
       - TS_AUTH_ONCE=true
     configs:
       - source: ts-serve
@@ -60,7 +60,7 @@ services:
       - ./${SERVICE}-db:/var/lib/mysql
     restart: always
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"] # Check if MariaDB accepts TCP connections and InnoDB is initialized
       interval: 1m
       start_period: 30s
       timeout: 10s
@@ -78,11 +78,19 @@ services:
       - ESPOCRM_ADMIN_PASSWORD=${ESPOCRM_ADMIN_PASSWORD}
       - ESPOCRM_SITE_URL=${ESPOCRM_SITE_URL}
       - ESPOCRM_DEFAULT_CURRENCY=${ESPOCRM_DEFAULT_CURRENCY}
-    volumes:
-      - ./${SERVICE}-data:/var/www/html
+    volumes: # EspoCRM 10 and later only need these directories mounted, not all of /var/www/html.
+      - ./${SERVICE}-data/data:/var/www/html/data
+      - ./${SERVICE}-data/custom:/var/www/html/custom
+      - ./${SERVICE}-data/client/custom:/var/www/html/client/custom
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:80/"] # Check if the service is responding
+      interval: 1m # How often to perform the check
+      timeout: 10s # Time to wait for the check to succeed
+      retries: 3 # Number of retries before marking as unhealthy
+      start_period: 30s # Time to wait before starting health checks
     restart: always
     depends_on:
       tailscale:
         condition: service_healthy
       database:
-        condition: service_started
+        condition: service_healthy

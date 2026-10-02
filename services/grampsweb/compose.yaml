@@ -22,7 +22,7 @@ services:
       - TS_USERSPACE=false
       - TS_ENABLE_HEALTH_CHECK=true              # Enable healthcheck endpoint: "/healthz"
       - TS_LOCAL_ADDR_PORT=127.0.0.1:41234       # The <addr>:<port> for the healthz endpoint
-      #- TS_ACCEPT_DNS=true # Uncomment when using MagicDNS
+      #- TS_ACCEPT_DNS=true # Uncomment only if the service must resolve MagicDNS names - this replaces Docker DNS, so Compose service names no longer resolve
       - TS_AUTH_ONCE=true
     configs:
       - source: ts-serve
@@ -74,6 +74,12 @@ services:
         condition: service_healthy
       grampsweb_redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:5000/ready"] # Check if the service is responding
+      interval: 1m # How often to perform the check
+      timeout: 10s # Time to wait for the check to succeed
+      retries: 3 # Number of retries before marking as unhealthy
+      start_period: 30s # Time to wait before starting health checks
     restart: always
 
   grampsweb_celery:
@@ -81,14 +87,21 @@ services:
     ports: []
     container_name: app-${SERVICE}-celery
     depends_on:
-      - grampsweb_redis
+      application:
+        condition: service_healthy # Wait until the web app has run the database migrations; both containers run them at startup
     command: celery -A gramps_webapi.celery worker --loglevel=INFO --concurrency=2
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "celery -A gramps_webapi.celery worker"] # Check if the Celery worker process is running
+      interval: 1m # How often to perform the check
+      timeout: 10s # Time to wait for the check to succeed
+      retries: 3 # Number of retries before marking as unhealthy
+      start_period: 30s # Time to wait before starting health checks
 
   grampsweb_redis:
     image: docker.io/library/redis:7.2.4-alpine
     container_name: app-${SERVICE}-redis
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"] # Check if ${SERVICE} process is running
+      test: ["CMD", "redis-cli", "ping"] # Check if Redis responds
       interval: 1m # How often to perform the check
       timeout: 10s # Time to wait for the check to succeed
       retries: 3 # Number of retries before marking as unhealthy

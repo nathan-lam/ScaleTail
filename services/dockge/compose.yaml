@@ -22,7 +22,7 @@ services:
       - TS_USERSPACE=false
       - TS_ENABLE_HEALTH_CHECK=true # Enable healthcheck endpoint: "/healthz"
       - TS_LOCAL_ADDR_PORT=127.0.0.1:41234 # The <addr>:<port> for the healthz endpoint
-      #- TS_ACCEPT_DNS=true # Uncomment when using MagicDNS
+      #- TS_ACCEPT_DNS=true # Uncomment only if the service must resolve MagicDNS names - this replaces Docker DNS, so Compose service names no longer resolve
       - TS_AUTH_ONCE=true
     configs:
       - source: ts-serve
@@ -53,15 +53,16 @@ services:
     network_mode: service:tailscale # Sidecar configuration to route ${SERVICE} through Tailscale
     container_name: app-${SERVICE} # Name for local container management
     environment:
-      # Varibles are delared in .env file.
+      # Variables are declared in .env file.
       - DOCKGE_STACKS_DIR=${STACKS_DIR} # Tell Dockge where your stacks directory is
       - PUID=${PUID} # Set the stack file/dir ownership to this user
       - PGID=${PGID} # Set the stack file/dir ownership to this group
     volumes:
       - ./${SERVICE}-data/app/config:/app/data
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${STACKS_DIR}:/stacks
+      - ${STACKS_DIR}:${STACKS_DIR}
     depends_on:
       tailscale:
         condition: service_healthy
+    # Healthcheck: defined by the image (extra/healthcheck), so this file does not override it.
     restart: always

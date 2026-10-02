@@ -22,7 +22,7 @@ services:
       - TS_USERSPACE=false
       - TS_ENABLE_HEALTH_CHECK=true              # Enable healthcheck endpoint: "/healthz"
       - TS_LOCAL_ADDR_PORT=127.0.0.1:41234       # The <addr>:<port> for the healthz endpoint
-      #- TS_ACCEPT_DNS=true # Uncomment when using MagicDNS
+      #- TS_ACCEPT_DNS=true # Uncomment only if the service must resolve MagicDNS names - this replaces Docker DNS, so Compose service names no longer resolve
       - TS_AUTH_ONCE=true
     configs:
       - source: ts-serve
@@ -55,11 +55,11 @@ services:
       tailscale:
         condition: service_healthy
       db:
-        condition: service_started
+        condition: service_healthy
       broker:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "pgrep", "-f", "${SERVICE}"] # Check if ${SERVICE} process is running
+      test: ["CMD", "curl", "-fsS", "-L", "-o", "/dev/null", "http://localhost:80/"] # Check if the service is responding; overrides the image check, which targets port 8000 while this stack sets PAPERLESS_PORT=80. Uses localhost, the only host Paperless always accepts when PAPERLESS_ALLOWED_HOSTS is set
       interval: 1m # How often to perform the check
       timeout: 10s # Time to wait for the check to succeed
       retries: 3 # Number of retries before marking as unhealthy
@@ -86,6 +86,12 @@ services:
   db:
     image: docker.io/library/postgres:18
     container_name: app-${SERVICE}-db # Name for local container management
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d paperless"] # Check if PostgreSQL accepts connections
+      interval: 1m # How often to perform the check
+      timeout: 10s # Time to wait for the check to succeed
+      retries: 3 # Number of retries before marking as unhealthy
+      start_period: 30s # Time to wait before starting health checks
     restart: always
     volumes:
       - ./${SERVICE}-data/pgdata:/var/lib/postgresql
@@ -99,6 +105,12 @@ services:
   broker:
     image: docker.io/library/redis:8
     container_name: app-${SERVICE}-broker # Name for local container management
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"] # Check if Redis responds
+      interval: 1m # How often to perform the check
+      timeout: 10s # Time to wait for the check to succeed
+      retries: 3 # Number of retries before marking as unhealthy
+      start_period: 30s # Time to wait before starting health checks
     restart: always
     volumes:
       - ./${SERVICE}-data/redisdata:/data

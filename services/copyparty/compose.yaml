@@ -38,7 +38,7 @@ services:
       - TS_USERSPACE=false
       - TS_ENABLE_HEALTH_CHECK=true              # Enable healthcheck endpoint: "/healthz"
       - TS_LOCAL_ADDR_PORT=127.0.0.1:41234       # The <addr>:<port> for the healthz endpoint
-      #- TS_ACCEPT_DNS=true # Uncomment when using MagicDNS
+      #- TS_ACCEPT_DNS=true # Uncomment only if the service must resolve MagicDNS names - this replaces Docker DNS, so Compose service names no longer resolve
       - TS_AUTH_ONCE=true
     configs:
       - source: ts-serve
@@ -86,7 +86,7 @@ services:
     stop_grace_period: 15s  # thumbnailer is allowed to continue finishing up for 10s after the shutdown signal
     healthcheck:
       # hide it from logs with "/._" so it matches the default --lf-url filter 
-      test: ["CMD-SHELL", "wget --spider -q 127.0.0.1:3923/?reset=/._"]
+      test: ["CMD-SHELL", "wget --spider -q 127.0.0.1:3923/?reset=/._"] # Check if the service is responding
       interval: 1m
       timeout: 2s
       retries: 5

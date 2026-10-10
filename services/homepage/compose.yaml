@@ -53,7 +53,7 @@ services:
       start_period: 10s # Time to wait before starting health checks
     restart: always
 
-  # ${SERVICE}
+  # Application
   application:
     image: ${IMAGE_URL} # Image to be used
     network_mode: service:tailscale # Sidecar configuration to route the service through Tailscale
@@ -66,7 +66,6 @@ services:
           memory: 128M
     environment:
       - HOMEPAGE_ALLOWED_HOSTS=homepage.${TAILNET_NAME}.ts.net
-      #- NODE_OPTIONS=--max-old-space-size=64 # Triggers strict garbage collection at 64MB
       - TZ=${TZ}
     volumes:
       - ./${SERVICE}-data/config:/app/config

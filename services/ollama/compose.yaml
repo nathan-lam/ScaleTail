@@ -60,6 +60,7 @@ services:
     environment:
       - OLLAMA_HOST=0.0.0.0:11434
       - OLLAMA_KEEP_ALIVE=24h # Optional: keeps models loaded in memory (default is 5 min)
+      - OLLAMA_ORIGINS=moz-extension://*,chrome-extension://*,safari-web-extension://*
     volumes:
       - ./${SERVICE}-data:/root/.ollama # Stores downloaded models
     depends_on:

@@ -1,11 +1,9 @@
 #!/bin/bash
 # Configuration
-BACKUP_DIR="/path/to/your/backup/folder"
-DATA_DIR="/path/to/freshrss/data" # Your host volume path
-DATE=$(date +%Y%m%d_%H%M%S)
 
-# Create archive of the config/data directory
-tar -zcf "$BACKUP_DIR/backup_freshrss_$DATE.tar.gz" -C "$(dirname "$DATA_DIR")" "$(basename "$DATA_DIR")"
+DATA_DIR="/home/user_name/DATAHOARD/99 Meta/Backups" # Your host volume path
+DATE=$(date +%Y%m%d)
+USER="XC1ggvZrNTAnegx"
 
-# Optional: Keep only the last 7 days of backups
-find "$BACKUP_DIR" -name "freshrss_backup_*.tar.gz" -mtime +7 -exec rm {} \;
+# Export OPML and then send it to ssh destination
+docker exec -u www-data app-freshrss php cli/export-opml-for-user.php --user "$USER" | ssh user_name@bazzite "cat > \"$DATA_DIR/freshrss_${USER}_${DATE}_export.opml\""

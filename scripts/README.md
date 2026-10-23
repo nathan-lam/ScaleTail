@@ -22,9 +22,13 @@ These services need to have some form of backup solution
 - freshrss
     - OPML
 - immich
+    - metadata assets
 - karakeep
+    - bookmarks
 - paperless-ngx
+    - 
 - radicale
+    - 
 - sparkyfitness
 - stashapp
 - vaultwarden

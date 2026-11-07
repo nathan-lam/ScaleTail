@@ -1,0 +1,260 @@
+configs:
+  ts-serve:
+    content: |
+      {"TCP":{"443":{"HTTPS":true}},
+      "Web":{"$${TS_CERT_DOMAIN}:443": {"Handlers":{"/": {"Proxy":"http://127.0.0.1:80"}}}}, "AllowFunnel":{"$${TS_CERT_DOMAIN}:443":false}}
+
+services:
+  # Tailscale Sidecar Configuration
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale-${SERVICE}
+    hostname: ${SERVICE}
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/serve.json
+      - TS_USERSPACE=false
+      - TS_ENABLE_HEALTH_CHECK=true
+      - TS_LOCAL_ADDR_PORT=127.0.0.1:41234
+      - TS_AUTH_ONCE=true
+    configs:
+      - source: ts-serve
+        target: /config/serve.json
+    volumes:
+      - ./config:/config
+      - ./ts/state:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - net_admin
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:41234/healthz"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: always
+
+  # TypeType Web Frontend
+  typetype:
+    image: ${TYPETYPE_WEB_IMAGE:-ghcr.io/typetype-video/typetype:${TYPETYPE_VERSION:-latest}}
+    network_mode: service:tailscale
+    container_name: app-${SERVICE}-web
+    environment:
+      TYPETYPE_SERVER_HOST: 127.0.0.1
+      TYPETYPE_SERVER_PORT: "${TYPETYPE_SERVER_PORT:-8080}"
+      TYPETYPE_TOKEN_HOST: 127.0.0.1
+      TYPETYPE_TOKEN_PORT: "${TYPETYPE_TOKEN_PORT:-8081}"
+      TYPETYPE_DOWNLOADER_HOST: 127.0.0.1
+      TYPETYPE_DOWNLOADER_PORT: "${TYPETYPE_DOWNLOADER_PORT:-18093}"
+    depends_on:
+      tailscale:
+        condition: service_healthy
+      typetype-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/api/version/web"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: always
+
+  # TypeType Server (Backend API)
+  typetype-server:
+    image: ${TYPETYPE_SERVER_IMAGE:-ghcr.io/typetype-video/typetype-server:${TYPETYPE_VERSION:-latest}}
+    network_mode: service:tailscale
+    container_name: app-${SERVICE}-server
+    environment:
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8082,http://127.0.0.1:8082,http://localhost:5173,http://127.0.0.1:5173}
+      AUTH_SESSION_TTL_DAYS: ${AUTH_SESSION_TTL_DAYS:-30}
+      AUTH_ALLOW_INSECURE_COOKIES: ${AUTH_ALLOW_INSECURE_COOKIES:-false}
+      DATABASE_URL: ${DATABASE_URL:-jdbc:postgresql://127.0.0.1:5432/${POSTGRES_DB:-typetype}}
+      DATABASE_USER: ${DATABASE_USER:-${POSTGRES_USER:-typetype}}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-${POSTGRES_PASSWORD:-typetype}}
+      DRAGONFLY_URL: ${DRAGONFLY_URL:-redis://127.0.0.1:6379}
+      GITHUB_REPO: ${GITHUB_REPO:-TypeType-Video/TypeType}
+      GITHUB_ISSUE_TEMPLATE: ${GITHUB_ISSUE_TEMPLATE:-bug_report_backend.md}
+      DOWNLOADER_SERVICE_URL: ${DOWNLOADER_SERVICE_URL:-http://127.0.0.1:18093}
+      SUBTITLE_SERVICE_URL: ${SUBTITLE_SERVICE_URL:-http://127.0.0.1:8081}
+      YOUTUBE_OUTBOUND_PROXY_URL: ${YOUTUBE_OUTBOUND_PROXY_URL:-}
+      YOUTUBE_REMOTE_LOGIN_ENABLED: ${YOUTUBE_REMOTE_LOGIN_ENABLED:-true}
+      YOUTUBE_REMOTE_LOGIN_SERVICE_URL: ${YOUTUBE_REMOTE_LOGIN_SERVICE_URL:-http://127.0.0.1:8081}
+      YOUTUBE_REMOTE_LOGIN_CALLBACK_BASE_URL: ${YOUTUBE_REMOTE_LOGIN_CALLBACK_BASE_URL:-http://127.0.0.1:8080}
+      YOUTUBE_REMOTE_LOGIN_INTERNAL_TOKEN_FILE: /run/typetype-secrets/youtube_remote_login_internal_token
+      YOUTUBE_SESSION_ENCRYPTION_KEY_FILE: /run/typetype-secrets/youtube_session_encryption_key
+      BILIBILI_SESSION_ENCRYPTION_KEY: ${BILIBILI_SESSION_ENCRYPTION_KEY:-}
+      YOUTUBE_REMOTE_LOGIN_TTL_MS: ${YOUTUBE_REMOTE_LOGIN_TTL_MS:-480000}
+      YOUTUBE_REMOTE_LOGIN_MAX_SESSIONS: ${YOUTUBE_REMOTE_LOGIN_MAX_SESSIONS:-2}
+      YOUTUBE_REMOTE_LOGIN_MAX_FRAME_BYTES: ${YOUTUBE_REMOTE_LOGIN_MAX_FRAME_BYTES:-524288}
+    volumes:
+      - typetype_secrets:/run/typetype-secrets:ro
+    depends_on:
+      tailscale:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
+      typetype-token:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: always
+
+  # TypeType Downloader
+  typetype-downloader:
+    image: ${TYPETYPE_DOWNLOADER_IMAGE:-ghcr.io/typetype-video/typetype-downloader:${TYPETYPE_VERSION:-latest}}
+    network_mode: service:tailscale
+    container_name: app-${SERVICE}-downloader
+    environment:
+      HTTP_PORT: "18093"
+      PUBLIC_BASE_URL: /api/downloader
+      TYPETYPE_API_BASE: ${TYPETYPE_API_BASE:-http://127.0.0.1:8080}
+      DB_URL: ${DB_URL:-jdbc:postgresql://127.0.0.1:5432/typetype_downloader}
+      DB_USER: ${DB_USER:-${POSTGRES_USER:-typetype}}
+      DB_PASSWORD: ${DB_PASSWORD:-${POSTGRES_PASSWORD:-typetype}}
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: "6379"
+      REDIS_QUEUE_KEY: downloader:queue
+      MAX_CONCURRENT_WORKERS: "2"
+      MAX_QUEUE_SIZE: "100"
+      JOB_TTL_SECONDS: "600"
+      DOWNLOAD_WORKERS: "8"
+      DOWNLOAD_CHUNK_SIZE: "10485760"
+      DOWNLOAD_RANGE_MODE: query
+      MUXER: avformat
+      STORAGE_BACKEND: s3
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://127.0.0.1:3900}
+      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://127.0.0.1:3900}
+      S3_REGION: garage
+      S3_BUCKET: typetype-downloads
+      S3_ACCESS_KEY: ${DOWNLOADER_S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${DOWNLOADER_S3_SECRET_KEY:-}
+      S3_ARTIFACT_TTL_SECONDS: "7200"
+    depends_on:
+      tailscale:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
+      garage:
+        condition: service_healthy
+      typetype-token:
+        condition: service_healthy
+    restart: always
+
+  # TypeType Token / Subtitle Helper
+  typetype-token:
+    image: ${TYPETYPE_TOKEN_IMAGE:-ghcr.io/typetype-video/typetype-token:${TYPETYPE_VERSION:-latest}}
+    network_mode: service:tailscale
+    container_name: app-${SERVICE}-token
+    init: true
+    ipc: host
+    environment:
+      NODE_ENV: production
+      YOUTUBE_OUTBOUND_PROXY_URL: ${YOUTUBE_OUTBOUND_PROXY_URL:-}
+      YOUTUBE_REMOTE_LOGIN_ENABLED: ${YOUTUBE_REMOTE_LOGIN_ENABLED:-true}
+      YOUTUBE_REMOTE_LOGIN_INTERNAL_TOKEN_FILE: /run/typetype-secrets/youtube_remote_login_internal_token
+      YOUTUBE_REMOTE_LOGIN_CALLBACK_ORIGIN: ${YOUTUBE_REMOTE_LOGIN_CALLBACK_ORIGIN:-http://127.0.0.1:8080}
+      YOUTUBE_REMOTE_LOGIN_MAX_SESSIONS: ${YOUTUBE_REMOTE_LOGIN_MAX_SESSIONS:-2}
+      YOUTUBE_REMOTE_LOGIN_FRAME_FPS: ${YOUTUBE_REMOTE_LOGIN_FRAME_FPS:-10}
+      YOUTUBE_REMOTE_LOGIN_MAX_FRAME_BYTES: ${YOUTUBE_REMOTE_LOGIN_MAX_FRAME_BYTES:-524288}
+    volumes:
+      - typetype_secrets:/run/typetype-secrets:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8081/health > /dev/null"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: always
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:17.11
+    network_mode: service:tailscale
+    container_name: app-${SERVICE}-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-typetype}
+      POSTGRES_USER: ${POSTGRES_USER:-typetype}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-typetype}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      retries: 30
+    restart: always
+
+  # Optional initialization helper for secrets/migration
+  typetype-init:
+    profiles: ["init"]
+    image: postgres:17.11
+    network_mode: service:tailscale
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_DB: ${POSTGRES_DB:-typetype}
+      POSTGRES_USER: ${POSTGRES_USER:-typetype}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-typetype}
+      YOUTUBE_REMOTE_LOGIN_INTERNAL_TOKEN: ${YOUTUBE_REMOTE_LOGIN_INTERNAL_TOKEN:-}
+      YOUTUBE_SESSION_ENCRYPTION_KEY: ${YOUTUBE_SESSION_ENCRYPTION_KEY:-}
+    command: ["/bin/sh", "/usr/local/bin/initialize-stack.sh"]
+    volumes:
+      - typetype_secrets:/run/typetype-secrets
+      - garage_config:/etc/garage
+      - ./.typetype-migration:/migration:ro
+      - ./scripts/initialize-stack.sh:/usr/local/bin/initialize-stack.sh:ro
+    restart: "no"
+
+  # Dragonfly Redis-compatible Cache/Queue
+  dragonfly:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly:v2.0.2
+    network_mode: service:tailscale
+    container_name: app-${SERVICE}-dragonfly
+    command:
+      - dragonfly
+      - --logtostderr
+      - --cache_mode=true
+      - --maxmemory=${DRAGONFLY_MAX_MEMORY:-2gb}
+      - --proactor_threads=${DRAGONFLY_THREADS:-4}
+      - --noversion_check
+    ulimits:
+      memlock: -1
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: always
+
+  # Garage S3 Storage
+  garage:
+    image: dxflrs/garage:v2.5.0
+    network_mode: service:tailscale
+    container_name: app-${SERVICE}-garage
+    environment:
+      GARAGE_CONFIG_FILE: /etc/garage/garage.toml
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:-}
+    volumes:
+      - garage_config:/etc/garage
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
+    healthcheck:
+      test: ["CMD", "/garage", "status"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: always
+
+volumes:
+  postgres_data:
+  typetype_secrets:
+  garage_config:
+  garage_meta:
+  garage_data:

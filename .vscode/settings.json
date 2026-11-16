@@ -1,0 +1,16 @@
+{
+  // Point rumdl to your repo's specific config file
+  "rumdl.configPath": ".markdownlint.yml",
+
+  // Optional: point to the binary if VSCodium doesn't detect it in PATH
+  // "rumdl.executablePath": "/path/to/rumdl",
+
+  // Automatically fix lint errors when saving Markdown files
+  "[markdown]": {
+    "editor.defaultFormatter": "rvben.rumdl",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.rumdl": "explicit"
+    }
+  }
+}

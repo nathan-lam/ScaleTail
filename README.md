@@ -99,6 +99,7 @@ Every stack starts from the same [standard setup](documentation/standard-setup.m
 | **Nessus**                       | Vulnerability scanner from Tenable, with the limited free Nessus Essentials license.    | [Details](services/nessus)                       |
 | **NetBox**                       | Network documentation tool for IP addresses, racks, devices, connections, and circuits. | [Details](services/netbox)                       |
 | **Pi-hole**                      | DNS sinkhole that blocks ads and trackers for every device that uses it.                | [Details](services/pihole)                       |
+| **Playit**                       | Game server tunneling using playit.gg                                                   | [Details](services/playit)                       |
 | **Pocket ID**                    | OpenID Connect provider that signs users in to your services with passkeys.             | [Details](services/pocket-id)                    |
 | **RustDesk Server**              | Your own ID and relay server for RustDesk clients, so they skip the public servers.     | [Details](services/rustdesk-server)              |
 | **Tailscale App Connector Node** | App connector that sends Tailnet traffic for chosen domains through this host.          | [Details](services/tailscale-app-connector-node) |
@@ -117,11 +118,13 @@ Every stack starts from the same [standard setup](documentation/standard-setup.m
 | **AudioMuse-AI**   | Tool that analyzes your music library and builds playlists for your media server.                    | [Details](services/audiomuse-ai)   |
 | **Bazarr**         | Subtitle manager for movies and series in Radarr and Sonarr.                                         | [Details](services/bazarr)         |
 | **BookLore**       | Book manager and browser reader, with Kobo and KOReader sync. In maintenance mode.                   | [Details](services/booklore)       |
+| **Calagopus**      | (WIP) Game panel based on Pterodactyl                                                                | [Details](services/calagopus)      |
 | **Configarr**      | Tool that applies YAML settings and TRaSH Guides profiles to Radarr and Sonarr, then exits.          | [Details](services/configarr)      |
 | **FreshRSS**       | RSS and Atom feed reader that uses SQLite, with no separate database server.                         | [Details](services/freshrss)       |
 | **Fusion**         | Lightweight feed reader for RSS, Atom, and JSON feeds, with a Fever API.                             | [Details](services/fusion)         |
 | **Hytale**         | Hytale game server in a community image, for players on your Tailnet.                                | [Details](services/hytale)         |
 | **ImageMaid**      | Cleaner that removes unused poster and background images from the Plex metadata folder.              | [Details](services/imagemaid)      |
+| **Invidious**      | Alternative YouTube frontend to proxy videos                                                         | [Details](services/invidious)      |
 | **Immich**         | Photo and video library that backs up mobile media, with search and sharing.                         | [Details](services/immich)         |
 | **Jellyfin**       | Media server that organizes and streams your movies, series, and music.                              | [Details](services/jellyfin)       |
 | **Kavita**         | Digital library for comics, manga, and books, with progress synced across devices.                   | [Details](services/kavita)         |
@@ -139,9 +142,11 @@ Every stack starts from the same [standard setup](documentation/standard-setup.m
 | **Seerr**          | Request manager for Plex, Jellyfin, and Emby that sends approved requests to Radarr and Sonarr.      | [Details](services/seerr)          |
 | **Slink**          | Image hosting platform that shares uploads through links.                                            | [Details](services/slink)          |
 | **Sonarr**         | Series manager that searches Usenet and BitTorrent for new episodes.                                 | [Details](services/sonarr)         |
+| **Stash**          | Media organizer ( ͡° ͜ʖ ͡°)                                                                             | [Details](services/stashapp)       |
 | **Storyteller**    | Platform for reading ebooks with synced audiobook narration.                                         | [Details](services/storyteller)    |
 | **Swing Music**    | Music player and streaming server for your local audio files.                                        | [Details](services/swingmx)        |
 | **Tautulli**       | Monitoring tool for Plex Media Server, with viewing history, statistics, and notifications.          | [Details](services/tautulli)       |
+| **Typetype**       | (WIP) Alternative YouTube frontend to proxy videos                                                   | [Details](services/typetype)       |
 
 ### Productivity and collaboration
 
@@ -237,9 +242,10 @@ Every stack starts from the same [standard setup](documentation/standard-setup.m
 | **Beszel Agent**       | Agent that sends system and Docker stats to a Beszel hub.                             | [Details](services/beszel-agent)      |
 | **Beszel Hub**         | Server monitor with history, Docker stats, and alerts.                                | [Details](services/beszel-hub)        |
 | **changedetection.io** | Monitor that watches web pages and notifies you when their content changes.           | [Details](services/changedetection)   |
-| **Gatus**              | Status page and scheduled health checks for websites and services.                   | [Details](services/gatus)             |
+| **Gatus**              | Status page and scheduled health checks for websites and services.                    | [Details](services/gatus)             |
 | **Grafana**            | Dashboards and alerts for metrics, logs, and traces from many data sources.           | [Details](services/grafana)           |
 | **Logchef**            | Log analytics interface for logs that already live in ClickHouse or VictoriaLogs.     | [Details](services/logchef)           |
+| **NetData**            | (Depreciated) Hardware tracking. Using Beszel instead to track container metrics.     | [Details](services/netdata)           |
 | **Portracker**         | Port tracker that discovers the services on your systems and maps the ports they use. | [Details](services/portracker)        |
 | **Speedtest Tracker**  | Tool that runs scheduled internet speed tests and charts the results over time.       | [Details](services/speedtest-tracker) |
 | **Umami**              | Web analytics that uses no cookies and collects no personal data.                     | [Details](services/umami)             |
@@ -270,13 +276,14 @@ Every stack starts from the same [standard setup](documentation/standard-setup.m
 
 ### Food and wellness
 
-| Service             | Description                                                                         | Link                           |
-| ------------------- | ----------------------------------------------------------------------------------- | ------------------------------ |
-| **Clean Slate**     | Calorie tracker for food, recipes, and exercise.                                    | [Details](services/cleanslate) |
-| **KitchenOwl**      | Grocery list and recipe manager for households, with meal planning and expenses.    | [Details](services/kitchenowl) |
-| **Mealie**          | Recipe manager and meal planner with shopping lists and imports from web addresses. | [Details](services/mealie)     |
-| **openGym**         | Gym and body-weight tracker for routines and workouts.                              | [Details](services/opengym)    |
-| **Tandoor Recipes** | Recipe manager and meal planner with shopping lists.                                | [Details](services/tandoor)    |
+| Service             | Description                                                                         | Link                              |
+| ------------------- | ----------------------------------------------------------------------------------- | --------------------------------- |
+| **Clean Slate**     | Calorie tracker for food, recipes, and exercise.                                    | [Details](services/cleanslate)    |
+| **KitchenOwl**      | Grocery list and recipe manager for households, with meal planning and expenses.    | [Details](services/kitchenowl)    |
+| **Mealie**          | Recipe manager and meal planner with shopping lists and imports from web addresses. | [Details](services/mealie)        |
+| **openGym**         | Gym and body-weight tracker for routines and workouts.                              | [Details](services/opengym)       |
+| **SparkyFitness**   | Self hosted fitness tracker based on myfitnesspal                                   | [Details](services/sparkyfitness) |
+| **Tandoor Recipes** | Recipe manager and meal planner with shopping lists.                                | [Details](services/tandoor)       |
 
 ## Update a stack
 

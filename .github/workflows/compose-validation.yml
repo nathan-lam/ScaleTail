@@ -57,11 +57,11 @@ jobs:
                 ok=1
                 unset_vars=$(sed -nE 's/.*The \\?"([A-Za-z0-9_]+)\\?" variable is not set.*/\1/p' <<<"$out" | sort -u | paste -sd' ' -)
                 if [ -n "$unset_vars" ]; then
-                  echo "::error file=${dir}compose.yaml::Used in compose.yaml but not defined in ${dir}.env: ${unset_vars}"
+                  echo "::error file=${dir}compose.yaml::Used in compose.yaml but not defined in ${dir}.env.example: ${unset_vars}"
                   status=1
                 fi
                 for v in "${vars[@]}"; do
-                  grep -qE "^${v}=" "${dir}.env" || { echo "::error file=${dir}compose.yaml::${v} is required but not listed in ${dir}.env"; status=1; }
+                  grep -qE "^${v}=" "${dir}.env" || { echo "::error file=${dir}compose.yaml::${v} is required but not listed in ${dir}.env.example"; status=1; }
                 done
                 if ! (cd "$dir" && env "${vars[@]/%/=dummy}" docker compose config --format json 2>/dev/null \
                     | jq -r '(.configs // {}) | to_entries[] | select(.key | startswith("ts-serve")) | .value.content' \

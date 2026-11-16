@@ -124,8 +124,8 @@ Every stack starts from the same [standard setup](documentation/standard-setup.m
 | **Fusion**         | Lightweight feed reader for RSS, Atom, and JSON feeds, with a Fever API.                             | [Details](services/fusion)         |
 | **Hytale**         | Hytale game server in a community image, for players on your Tailnet.                                | [Details](services/hytale)         |
 | **ImageMaid**      | Cleaner that removes unused poster and background images from the Plex metadata folder.              | [Details](services/imagemaid)      |
-| **Invidious**      | Alternative YouTube frontend to proxy videos                                                         | [Details](services/invidious)      |
 | **Immich**         | Photo and video library that backs up mobile media, with search and sharing.                         | [Details](services/immich)         |
+| **Invidious**      | Alternative YouTube frontend to proxy videos                                                         | [Details](services/invidious)      |
 | **Jellyfin**       | Media server that organizes and streams your movies, series, and music.                              | [Details](services/jellyfin)       |
 | **Kavita**         | Digital library for comics, manga, and books, with progress synced across devices.                   | [Details](services/kavita)         |
 | **MeTube**         | Web UI for yt-dlp that downloads videos and audio from YouTube and other sites.                      | [Details](services/metube)         |
@@ -139,6 +139,7 @@ Every stack starts from the same [standard setup](documentation/standard-setup.m
 | **qBittorrent**    | BitTorrent client with a web interface.                                                              | [Details](services/qbittorrent)    |
 | **Radarr**         | Movie manager that searches Usenet and BitTorrent and sorts files into your library.                 | [Details](services/radarr)         |
 | **Recyclarr**      | Tool that applies TRaSH Guides quality profiles from a YAML file to Radarr and Sonarr on a schedule. | [Details](services/recyclarr)      |
+| **RSSHub**         | RSS Feed builder.                                                                                    | [Details](services/rsshub)         |
 | **Seerr**          | Request manager for Plex, Jellyfin, and Emby that sends approved requests to Radarr and Sonarr.      | [Details](services/seerr)          |
 | **Slink**          | Image hosting platform that shares uploads through links.                                            | [Details](services/slink)          |
 | **Sonarr**         | Series manager that searches Usenet and BitTorrent for new episodes.                                 | [Details](services/sonarr)         |

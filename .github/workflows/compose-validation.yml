@@ -60,6 +60,10 @@ jobs:
               if out=$(cd "$dir" && env "${vars[@]/%/=dummy}" docker compose "${env_flag[@]}" config --quiet 2>&1); then
                 ok=1
                 unset_vars=$(sed -nE 's/.*The \\?"([A-Za-z0-9_]+)\\?" variable is not set.*/\1/p' <<<"$out" | sort -u | paste -sd' ' -)
+                if [ -n "$unset_vars" ]; then
+                  echo "::error file=${dir}compose.yaml::Used in compose.yaml but not defined in ${dir}.env.example: ${unset_vars}"
+                  status=1
+                fi
                 if [ ! -f "${dir}.env.example" ]; then
                   echo "::error file=${dir}compose.yaml::Missing ${dir}.env.example"
                   status=1
@@ -80,6 +84,8 @@ jobs:
                     fi
                   done < <(jq -r '(.configs // {}) | to_entries[] | select(.key | startswith("ts-serve")) | .value.content' <<<"$cfg_json")
                 fi
+                break
+              fi
               missing=$(grep -oE 'required variable [A-Za-z0-9_]+' <<<"$out" | awk '{print $3}' | sort -u | grep -vxFf <(printf '%s\n' "${vars[@]}") || true)
               if [ -z "$missing" ]; then
                 echo "::error file=${dir}compose.yaml::docker compose config failed in ${dir}"
@@ -97,7 +103,6 @@ jobs:
             fi
           done
           exit $status
-
       # Line 11 of .gitignore is "Icon[<CR>]", with a carriage-return byte
       # between the brackets. Editors often turn it into a newline, which
       # breaks the rule without any visible change in the diff.

@@ -60,28 +60,26 @@ jobs:
               if out=$(cd "$dir" && env "${vars[@]/%/=dummy}" docker compose "${env_flag[@]}" config --quiet 2>&1); then
                 ok=1
                 unset_vars=$(sed -nE 's/.*The \\?"([A-Za-z0-9_]+)\\?" variable is not set.*/\1/p' <<<"$out" | sort -u | paste -sd' ' -)
-                if [ -n "$unset_vars" ]; then
-                  echo "::error file=${dir}compose.yaml::Used in compose.yaml but not defined in ${dir}.env.example: ${unset_vars}"
+                if [ ! -f "${dir}.env.example" ]; then
+                  echo "::error file=${dir}compose.yaml::Missing ${dir}.env.example"
                   status=1
+                else
+                  for v in "${vars[@]}"; do
+                    grep -qE "^${v}=" "${dir}.env.example" || { echo "::error file=${dir}compose.yaml::${v} is required but not listed in ${dir}.env.example"; status=1; }
+                  done
                 fi
-                for v in "${vars[@]}"; do
-                  grep -qE "^${v}=" "${dir}.env.example" || { echo "::error file=${dir}compose.yaml::${v} is required but not listed in ${dir}.env.example"; status=1; }
-                done
                 cfg_json=$(cd "$dir" && env "${vars[@]/%/=dummy}" docker compose "${env_flag[@]}" config --format json 2>/dev/null) || cfg_json=""
-                if [ -z "$cfg_json" ] || ! jq -r '(.configs // {}) | to_entries[] | select(.key | startswith("ts-serve")) | .value.content' <<<"$cfg_json" | jq empty 2>/dev/null; then
-                  echo "::error file=${dir}compose.yaml::The Tailscale Serve configuration is not valid JSON"
+                if [ -z "$cfg_json" ]; then
+                  echo "::error file=${dir}compose.yaml::docker compose config --format json failed in ${dir}"
                   status=1
+                else
+                  while IFS= read -r content; do
+                    if ! jq empty <<<"$content" 2>/dev/null; then
+                      echo "::error file=${dir}compose.yaml::The Tailscale Serve configuration is not valid JSON"
+                      status=1
+                    fi
+                  done < <(jq -r '(.configs // {}) | to_entries[] | select(.key | startswith("ts-serve")) | .value.content' <<<"$cfg_json")
                 fi
-                used=$(jq -c '[(.configs // {}) | keys[] | select(startswith("ts-serve"))]' <<<"${cfg_json:-{}}") || used='[]'
-                raw=$(cd "$dir" && env "${vars[@]/%/=dummy}" docker compose "${env_flag[@]}" config --no-interpolate --format json 2>/dev/null) || raw='{}'
-                while read -r name; do
-                  if ! jq -r --arg n "$name" '.configs[$n].content' <<<"$raw" | jq empty 2>/dev/null; then
-                    echo "::error file=${dir}compose.yaml::The Tailscale Serve configuration ${name}, which the stack does not use by default, is not valid JSON"
-                    status=1
-                  fi
-                done < <(jq -r --argjson used "$used" '(.configs // {}) | keys[] | select(startswith("ts-serve")) | select(. as $k | $used | index($k) | not)' <<<"$raw")
-                break
-              fi
               missing=$(grep -oE 'required variable [A-Za-z0-9_]+' <<<"$out" | awk '{print $3}' | sort -u | grep -vxFf <(printf '%s\n' "${vars[@]}") || true)
               if [ -z "$missing" ]; then
                 echo "::error file=${dir}compose.yaml::docker compose config failed in ${dir}"

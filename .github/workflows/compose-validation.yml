@@ -63,15 +63,15 @@ jobs:
                 for v in "${vars[@]}"; do
                   grep -qE "^${v}=" "${dir}.env.example" || { echo "::error file=${dir}compose.yaml::${v} is required but not listed in ${dir}.env.example"; status=1; }
                 done
-                if ! (cd "$dir" && env "${vars[@]/%/=dummy}" docker compose config --format json 2>/dev/null \
+                if ! (cd "$dir" && env "${vars[@]/%/=dummy}" docker compose config --env-file .env.example --format json 2>/dev/null \
                     | jq -r '(.configs // {}) | to_entries[] | select(.key | startswith("ts-serve")) | .value.content' \
                     | jq empty); then
                   echo "::error file=${dir}compose.yaml::The Tailscale Serve configuration is not valid JSON"
                   status=1
                 fi
-                used=$(cd "$dir" && env "${vars[@]/%/=dummy}" docker compose config --format json 2>/dev/null \
+                used=$(cd "$dir" && env "${vars[@]/%/=dummy}" docker compose config --env-file .env.example --format json 2>/dev/null \
                     | jq -c '[(.configs // {}) | keys[] | select(startswith("ts-serve"))]') || used='[]'
-                raw=$(cd "$dir" && env "${vars[@]/%/=dummy}" docker compose config --no-interpolate --format json 2>/dev/null) || raw='{}'
+                raw=$(cd "$dir" && env "${vars[@]/%/=dummy}" docker compose config --env-file .env.example --no-interpolate --format json 2>/dev/null) || raw='{}'
                 while read -r name; do
                   if ! jq -r --arg n "$name" '.configs[$n].content' <<<"$raw" | jq empty; then
                     echo "::error file=${dir}compose.yaml::The Tailscale Serve configuration ${name}, which the stack does not use by default, is not valid JSON"
